@@ -48,15 +48,11 @@ h2 .em{color:var(--accent)}
   <div class="prog" id="prog"><i class="on"></i><i></i><i></i><i></i></div>
 
   <div class="step on" id="s1">
-    <h2>Quem é <span class="em">você</span>?</h2>
-    <p class="sub">Leva um minuto. Cada pessoa participa uma única vez.</p>
-    <div class="row2">
-      <div><label for="nome">Nome</label><input type="text" id="nome" autocomplete="given-name"></div>
-      <div><label for="sobrenome">Sobrenome</label><input type="text" id="sobrenome" autocomplete="family-name"></div>
-    </div>
-    <div><label for="email">E-mail</label><input type="email" id="email" autocomplete="email" placeholder="voce@email.com"></div>
-    <div><label for="modalidade">Modalidade que você pratica ou acompanha</label><select id="modalidade"><option value="">Escolha…</option></select></div>
-    <div class="chk"><input type="checkbox" id="consent"><span>Entendi que meu primeiro nome e minha ideia podem aparecer no telão e que meus dados serão usados só para este ideathon e o estudo da Arena Hub.</span></div>
+    <h2>Sua <span class="em">inscrição</span></h2>
+    <p class="sub">Leve um minuto. Cada número de inscrição participa uma única vez.</p>
+    <div><label for="numero">Número de inscrição</label><input type="text" id="numero" inputmode="text" autocomplete="off" placeholder="Ex.: 1234"></div>
+    <div><label for="modalidade">Sua modalidade esportiva</label><select id="modalidade"><option value="">Escolha…</option></select></div>
+    <p class="tiny">Não pedimos nome nem e-mail — só o seu número de inscrição e a sua modalidade.</p>
     <div class="err" id="e1"></div>
     <div class="spacer"></div>
     <button class="btn wide" id="b1">Continuar</button>
@@ -128,13 +124,11 @@ fetch('/api/config').then(r=>r.json()).then(cfg=>{
 }).catch(()=>err('e1','Não consegui carregar. Recarregue a página.'));
 
 $('b1').addEventListener('click',()=>{clr('e1');
-  const nome=$('nome').value.trim(),sob=$('sobrenome').value.trim(),email=$('email').value.trim(),md=$('modalidade').value;
-  if(nome.length<2)return err('e1','Escreve seu nome.');
-  if(sob.length<2)return err('e1','Coloca também o sobrenome — usamos para garantir uma resposta por pessoa.');
-  if(!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email))return err('e1','Esse e-mail não parece completo. Confere?');
-  if(!md)return err('e1','Escolhe a modalidade que mais tem a ver com você.');
-  if(!$('consent').checked)return err('e1','Precisamos da sua ciência sobre o uso dos dados para continuar.');
-  me={nome,sobrenome:sob,email,modalidade:md};goto(2);});
+  const numero=$('numero').value.trim(),md=$('modalidade').value;
+  if(numero.length<1)return err('e1','Informe o seu número de inscrição.');
+  if(!/^[A-Za-z0-9._-]+$/.test(numero))return err('e1','Número de inscrição inválido (use letras e números).');
+  if(!md)return err('e1','Escolhe a sua modalidade esportiva.');
+  me={numero,modalidade:md};goto(2);});
 $('back2').addEventListener('click',()=>goto(1));
 $('back3').addEventListener('click',()=>goto(2));
 $('back4').addEventListener('click',()=>goto(3));

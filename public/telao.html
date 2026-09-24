@@ -92,7 +92,7 @@ function draw(d){
   const max=Math.max(1,...d.porTese.map(t=>t.n));
   $('rankRows').innerHTML=d.porTese.map(t=>'<div class="rrow"><div class="nm"><i style="background:'+t.cor+'"></i>'+t.nome+'</div><div class="n">'+t.n+'</div><div class="b"><i style="width:'+(t.n/max*100)+'%;background:'+t.cor+'"></i></div></div>').join('');
   $('topSols').innerHTML=(d.solucoes.slice(0,5).map(s=>'<div class="sr"><b>'+s.votos+'×</b><span>'+s.texto+'</span></div>').join(''))||'<div class="sr">sem votos ainda</div>';
-  if(d.recentes&&d.recentes[0]){$('tkTxt').textContent=d.recentes[0].frase;$('tkWho').textContent=(d.recentes[0].nome||'').toUpperCase();}
+  if(d.recentes&&d.recentes[0]){$('tkTxt').textContent=d.recentes[0].frase;$('tkWho').textContent=d.recentes[0].numero?('INSCRIÇÃO '+d.recentes[0].numero):'';}
   renderCloud(d.solucoes||[]);
 }
 async function tick(){try{const r=await fetch('/api/telao');const d=await r.json();draw(d);}catch(e){}}

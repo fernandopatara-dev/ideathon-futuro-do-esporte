@@ -131,9 +131,10 @@ export async function initSchema() {
       id SERIAL PRIMARY KEY,
       person_key TEXT UNIQUE NOT NULL,
       email_key TEXT UNIQUE NOT NULL,
-      nome TEXT NOT NULL,
-      sobrenome TEXT NOT NULL,
-      email TEXT NOT NULL,
+      numero TEXT,
+      nome TEXT NOT NULL DEFAULT '',
+      sobrenome TEXT NOT NULL DEFAULT '',
+      email TEXT NOT NULL DEFAULT '',
       modalidade TEXT,
       tese_slug TEXT NOT NULL,
       picks INT[] NOT NULL DEFAULT '{}',
@@ -146,8 +147,13 @@ export async function initSchema() {
       ip TEXT,
       criado_em TIMESTAMPTZ NOT NULL DEFAULT now()
     );
+    ALTER TABLE ideas ADD COLUMN IF NOT EXISTS numero TEXT;
+    ALTER TABLE ideas ALTER COLUMN nome SET DEFAULT '';
+    ALTER TABLE ideas ALTER COLUMN sobrenome SET DEFAULT '';
+    ALTER TABLE ideas ALTER COLUMN email SET DEFAULT '';
     CREATE INDEX IF NOT EXISTS idx_ideas_status ON ideas(status);
     CREATE INDEX IF NOT EXISTS idx_ideas_tese ON ideas(tese_slug);
+    CREATE INDEX IF NOT EXISTS idx_ideas_numero ON ideas(numero);
     CREATE TABLE IF NOT EXISTS access_log (
       id SERIAL PRIMARY KEY,
       usuario TEXT NOT NULL,

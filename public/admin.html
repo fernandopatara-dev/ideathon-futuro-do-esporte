@@ -94,14 +94,14 @@ td.m{font-family:var(--mono);font-size:12px;color:var(--muted);white-space:nowra
       <div class="panel">
         <div class="ph">
           <h3>Base de ideias</h3>
-          <input type="text" id="q" placeholder="Buscar nome, e-mail ou ideia">
+          <input type="text" id="q" placeholder="Buscar nº de inscrição ou ideia">
           <select id="fTese"><option value="">Todas as teses</option></select>
           <select id="fStatus"><option value="">Todos os status</option><option value="pendente">Aguardando revisão</option><option value="aprovada">Aprovadas</option><option value="bloqueada">Bloqueadas</option></select>
           <span class="sp"></span>
           <a class="sm" id="csv" href="/api/admin/export.csv">Exportar CSV</a>
         </div>
         <div class="tscroll"><table>
-          <thead><tr><th>Sel.</th><th>#</th><th>Hora</th><th>Nome</th><th>E-mail</th><th>Tese</th><th>3 soluções</th><th>Frase</th><th>Nota</th><th>Status</th><th>Agente / ação</th></tr></thead>
+          <thead><tr><th>Sel.</th><th>#</th><th>Hora</th><th>Nº inscrição</th><th>Modalidade</th><th>Tese</th><th>3 soluções</th><th>Frase</th><th>Nota</th><th>Status</th><th>Agente / ação</th></tr></thead>
           <tbody id="rows"></tbody>
         </table></div>
       </div>
@@ -205,8 +205,8 @@ async function loadIdeas(){
       '<td><input type="checkbox" '+(i.selecionada?'checked':'')+' onchange="toggleSel('+i.id+',this.checked)"></td>'+
       '<td class="m">#'+String(i.id).padStart(4,'0')+'</td>'+
       '<td class="m">'+fmt+'</td>'+
-      '<td>'+esc(i.nome)+' '+esc(i.sobrenome)+'</td>'+
-      '<td class="m">'+esc(i.email)+'</td>'+
+      '<td class="m">'+esc(i.numero||'—')+'</td>'+
+      '<td>'+esc(i.modalidade||'')+'</td>'+
       '<td><span class="dot" style="background:'+teseColor(i.tese_slug)+'"></span>'+esc(teseNome(i.tese_slug))+'</td>'+
       '<td><div class="chips">'+chips+'</div></td>'+
       '<td style="max-width:240px">'+esc(i.frase)+'</td>'+

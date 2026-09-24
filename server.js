@@ -86,15 +86,13 @@ app.post('/api/ideas', async (req, res) => {
     const ev = (await query('SELECT aberto, moderacao_ia, max_frase FROM event WHERE id=1;')).rows[0];
     if (!ev || !ev.aberto) return res.status(403).json({ error: 'As inscrições estão encerradas.' });
 
-    let { nome, sobrenome, email, modalidade, tese, picks, frase } = req.body || {};
-    nome = (nome || '').trim(); sobrenome = (sobrenome || '').trim();
-    email = (email || '').trim(); frase = (frase || '').trim();
+    let { numero, modalidade, tese, picks, frase } = req.body || {};
+    numero = (numero || '').trim();
+    frase = (frase || '').trim();
     modalidade = (modalidade || '').trim();
 
-    if (nome.length < 2) return res.status(400).json({ error: 'Escreva seu nome.' });
-    if (sobrenome.length < 2) return res.status(400).json({ error: 'Escreva seu sobrenome.' });
-    if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) return res.status(400).json({ error: 'E-mail inválido.' });
-    if (checkNome(nome + ' ' + sobrenome)) return res.status(400).json({ error: 'Esse nome não pode ser usado.' });
+    if (numero.length < 1 || numero.length > 30) return res.status(400).json({ error: 'Informe o seu número de inscrição.' });
+    if (!/^[A-Za-z0-9._-]+$/.test(numero)) return res.status(400).json({ error: 'Número de inscrição inválido (use letras e números).' });
     if (frase.length < 12) return res.status(400).json({ error: 'Conte um pouco mais sobre a sua ideia.' });
     if (frase.length > (ev.max_frase || 190)) return res.status(400).json({ error: `A frase passa de ${ev.max_frase} caracteres.` });
 
@@ -108,11 +106,11 @@ app.post('/api/ideas', async (req, res) => {
     const valid = (await query('SELECT id FROM solucoes WHERE tese_id=$1 AND ativa=TRUE AND id = ANY($2::int[]);', [teseRow.id, picks])).rows.map((r) => r.id);
     if (valid.length !== 3) return res.status(400).json({ error: 'Soluções inválidas para essa tese.' });
 
-    // dedup: uma resposta por pessoa (nome+sobrenome+email) e por e-mail
-    const personKey = sha(norm(nome) + '|' + norm(sobrenome) + '|' + norm(email));
-    const emailKey = sha(norm(email));
-    const dup = (await query('SELECT 1 FROM ideas WHERE person_key=$1 OR email_key=$2 LIMIT 1;', [personKey, emailKey])).rowCount;
-    if (dup) return res.status(409).json({ error: 'Você já enviou sua resposta. Cada pessoa participa uma única vez.' });
+    // dedup: uma resposta por número de inscrição
+    const personKey = sha(norm(numero));
+    const emailKey = personKey;
+    const dup = (await query('SELECT 1 FROM ideas WHERE person_key=$1 LIMIT 1;', [personKey])).rowCount;
+    if (dup) return res.status(409).json({ error: 'Este número de inscrição já enviou uma resposta. Cada atleta participa uma única vez.' });
 
     // moderação
     const mod = await moderate(frase, { moderacaoIA: ev.moderacao_ia });
@@ -124,12 +122,12 @@ app.post('/api/ideas', async (req, res) => {
     let inserted;
     try {
       inserted = await query(
-        `INSERT INTO ideas (person_key, email_key, nome, sobrenome, email, modalidade, tese_slug, picks, frase, status, agente_resultado, agente_motivo, ip)
-         VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13) RETURNING id, status;`,
-        [personKey, emailKey, nome, sobrenome, email, modalidade, teseRow.slug, picks, frase, mod.status, mod.resultado, mod.motivo, ip]
+        `INSERT INTO ideas (person_key, email_key, numero, modalidade, tese_slug, picks, frase, status, agente_resultado, agente_motivo, ip)
+         VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11) RETURNING id, status;`,
+        [personKey, emailKey, numero, modalidade, teseRow.slug, picks, frase, mod.status, mod.resultado, mod.motivo, ip]
       );
     } catch (e) {
-      if (e.code === '23505') return res.status(409).json({ error: 'Você já enviou sua resposta. Cada pessoa participa uma única vez.' });
+      if (e.code === '23505') return res.status(409).json({ error: 'Este número de inscrição já enviou uma resposta. Cada atleta participa uma única vez.' });
       throw e;
     }
     const row = inserted.rows[0];
@@ -161,7 +159,7 @@ app.get('/api/telao', async (req, res) => {
       ORDER BY votos DESC LIMIT 40;`)).rows;
 
     const totalVotos = solucoes.reduce((a, s) => a + s.votos, 0);
-    const recentes = (await query(`SELECT nome, frase, tese_slug FROM ideas WHERE status='aprovada' ORDER BY criado_em DESC LIMIT 8;`)).rows;
+    const recentes = (await query(`SELECT numero, frase, tese_slug FROM ideas WHERE status='aprovada' ORDER BY criado_em DESC LIMIT 8;`)).rows;
 
     res.json({ event: ev, totalPart, totalApr, totalVotos, porTese, solucoes, recentes });
   } catch (e) { console.error(e); res.status(500).json({ error: 'erro' }); }
@@ -210,10 +208,10 @@ app.get('/api/admin/ideas', requireAdmin, async (req, res) => {
     const cond = []; const params = [];
     if (status) { params.push(status); cond.push(`status=$${params.length}`); }
     if (tese) { params.push(tese); cond.push(`tese_slug=$${params.length}`); }
-    if (q) { params.push('%' + q.toLowerCase() + '%'); cond.push(`(lower(nome||' '||sobrenome) LIKE $${params.length} OR lower(email) LIKE $${params.length} OR lower(frase) LIKE $${params.length})`); }
+    if (q) { params.push('%' + q.toLowerCase() + '%'); cond.push(`(lower(coalesce(numero,'')) LIKE $${params.length} OR lower(frase) LIKE $${params.length})`); }
     const where = cond.length ? 'WHERE ' + cond.join(' AND ') : '';
     const rows = (await query(`
-      SELECT i.id, i.nome, i.sobrenome, i.email, i.modalidade, i.tese_slug, i.frase, i.status,
+      SELECT i.id, i.numero, i.modalidade, i.tese_slug, i.frase, i.status,
              i.agente_resultado, i.agente_motivo, i.selecionada, i.score, i.criado_em,
              COALESCE((SELECT array_agg(s.texto ORDER BY s.ordem) FROM solucoes s WHERE s.id = ANY(i.picks)), '{}') AS picks_textos
       FROM ideas i ${where} ORDER BY i.criado_em DESC LIMIT 2000;`, params)).rows;
@@ -324,13 +322,13 @@ app.put('/api/admin/event', requireAdmin, async (req, res) => {
 app.get('/api/admin/export.csv', requireAdmin, async (req, res) => {
   try {
     const rows = (await query(`
-      SELECT i.id, i.criado_em, i.nome, i.sobrenome, i.email, i.modalidade, i.tese_slug, i.status,
+      SELECT i.id, i.criado_em, i.numero, i.modalidade, i.tese_slug, i.status,
              i.selecionada, i.score, i.frase,
              COALESCE((SELECT string_agg(s.texto, ' | ' ORDER BY s.ordem) FROM solucoes s WHERE s.id = ANY(i.picks)), '') AS solucoes
       FROM ideas i ORDER BY i.criado_em DESC;`)).rows;
     const esc = (v) => '"' + String(v == null ? '' : v).replace(/"/g, '""') + '"';
-    const head = ['id','criado_em','nome','sobrenome','email','modalidade','tese','status','selecionada','score','frase','solucoes'];
-    const csv = [head.join(',')].concat(rows.map((r) => [r.id, r.criado_em, r.nome, r.sobrenome, r.email, r.modalidade, r.tese_slug, r.status, r.selecionada, r.score, r.frase, r.solucoes].map(esc).join(','))).join('\n');
+    const head = ['id','criado_em','numero_inscricao','modalidade','tese','status','selecionada','score','frase','solucoes'];
+    const csv = [head.join(',')].concat(rows.map((r) => [r.id, r.criado_em, r.numero, r.modalidade, r.tese_slug, r.status, r.selecionada, r.score, r.frase, r.solucoes].map(esc).join(','))).join('\n');
     await logAcao('admin', 'Exportou CSV (' + rows.length + ' registros)', null, ipOf(req));
     res.setHeader('Content-Type', 'text/csv; charset=utf-8');
     res.setHeader('Content-Disposition', 'attachment; filename="ideathon-ideias.csv"');
