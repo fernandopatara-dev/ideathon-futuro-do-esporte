@@ -1,0 +1,22 @@
+# Blueprint do Render — cria o serviço web automaticamente.
+# No Render: New > Blueprint > conecte este repositório.
+services:
+  - type: web
+    name: ideathon-futuro-do-esporte
+    runtime: node
+    plan: free
+    buildCommand: npm install
+    startCommand: npm start
+    envVars:
+      - key: DATABASE_URL
+        sync: false
+      - key: ADMIN_PASSWORD
+        sync: false
+      - key: SESSION_SECRET
+        generateValue: true
+      - key: ANTHROPIC_API_KEY
+        sync: false
+      - key: MOD_MODEL
+        value: claude-3-5-haiku-latest
+      - key: NODE_ENV
+        value: production

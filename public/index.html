@@ -1,0 +1,76 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Ideathon Futuro do Esporte — Arena Hub</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=Source+Sans+3:wght@400;600&family=JetBrains+Mono:wght@400;500&display=swap">
+<link rel="stylesheet" href="/app.css">
+<style>
+body{background:var(--stage);color:var(--stage-ink)}
+.hero{min-height:100dvh;display:flex;flex-direction:column;justify-content:center;padding-block:48px;position:relative;overflow:hidden}
+.glow{position:absolute;border-radius:50%;filter:blur(80px);opacity:.5;z-index:0}
+.g1{width:420px;height:420px;background:#FF5A3644;top:-120px;left:-80px}
+.g2{width:380px;height:380px;background:#14A89A44;bottom:-120px;right:-60px}
+.hero .wrap{position:relative;z-index:1;display:grid;grid-template-columns:1.4fr .8fr;gap:40px;align-items:center}
+.eyebrow{font-family:var(--mono);font-size:12px;letter-spacing:.16em;text-transform:uppercase;color:var(--stage-muted)}
+h1{font-size:clamp(46px,8vw,92px);margin:12px 0 16px;text-wrap:balance}
+.lede{font-size:20px;color:#C7CEDD;max-width:52ch;margin:0 0 26px}
+.cta{display:flex;gap:12px;flex-wrap:wrap}
+.qrcard{background:var(--surface);color:var(--ink);border-radius:18px;padding:22px;text-align:center}
+.qrcard h3{font-size:24px;margin-bottom:4px}
+.qrcard p{color:var(--muted);font-size:14px;margin:0 0 14px}
+#qr{width:220px;height:220px;margin:0 auto;background:#fff;border-radius:10px;display:flex;align-items:center;justify-content:center}
+#qr canvas{border-radius:6px}
+.qrurl{font-family:var(--mono);font-size:12px;color:var(--muted);margin-top:12px;word-break:break-all}
+.teses{display:flex;flex-wrap:wrap;gap:8px;margin-top:34px}
+.teses .tag{background:#ffffff14;color:#C7CEDD}
+.foot{font-family:var(--mono);font-size:11px;color:var(--stage-muted);margin-top:40px;letter-spacing:.04em}
+@media (max-width:820px){.hero .wrap{grid-template-columns:1fr;gap:28px}.qrcard{max-width:320px}}
+</style>
+</head>
+<body>
+<div class="hero">
+  <div class="glow g1"></div><div class="glow g2"></div>
+  <div class="wrap">
+    <div>
+      <div class="eyebrow">Arena Hub · Ação presencial</div>
+      <h1>Ideathon <span class="em">Futuro do Esporte</span></h1>
+      <p class="lede" id="lede">Se você pudesse mudar o esporte do futuro, o que faria? Escaneie, escolha sua tese e mande sua ideia — ela vai para o telão ao vivo.</p>
+      <div class="cta">
+        <a class="btn" href="/participar.html">Participar agora</a>
+        <a class="btn ghost" href="/telao.html" style="color:#fff;border-color:#ffffff33">Ver o telão</a>
+      </div>
+      <div class="teses" id="teses"></div>
+      <div class="foot">Uma pessoa, uma ideia · seus dados são usados só para este ideathon e o estudo da Arena Hub</div>
+    </div>
+    <div class="qrcard">
+      <h3>Aponte a câmera</h3>
+      <p>e participe pelo celular</p>
+      <div id="qr">carregando…</div>
+      <div class="qrurl" id="qrurl"></div>
+    </div>
+  </div>
+</div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrious/4.0.2/qrious.min.js"></script>
+<script>
+const participarURL = location.origin + '/participar.html';
+document.getElementById('qrurl').textContent = participarURL;
+try {
+  const el = document.createElement('canvas');
+  new QRious({ element: el, value: participarURL, size: 220, background: '#fff', foreground: '#14213D', level: 'M' });
+  const box = document.getElementById('qr'); box.innerHTML = ''; box.appendChild(el);
+} catch (e) { document.getElementById('qr').textContent = participarURL; }
+
+fetch('/api/config').then(r => r.json()).then(cfg => {
+  if (cfg.event) {
+    document.title = cfg.event.nome + ' — Arena Hub';
+    if (cfg.event.subtitulo) document.getElementById('lede').textContent =
+      'Se você pudesse mudar o esporte do futuro, o que faria? Escaneie, escolha sua tese e mande sua ideia — ' + cfg.event.subtitulo.toLowerCase() + '.';
+  }
+  const t = document.getElementById('teses');
+  (cfg.teses || []).forEach(te => { const s = document.createElement('span'); s.className = 'tag'; s.textContent = te.nome; t.appendChild(s); });
+}).catch(() => {});
+</script>
+</body>
+</html>

@@ -1,0 +1,103 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Telão — Ideathon Futuro do Esporte</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=Source+Sans+3:wght@400;600&family=JetBrains+Mono:wght@400;500&display=swap">
+<link rel="stylesheet" href="/app.css">
+<style>
+body{background:var(--stage);color:var(--stage-ink);overflow:hidden}
+.stage{height:100dvh;display:grid;grid-template-columns:1fr 320px;grid-template-rows:auto auto 1fr;gap:14px 20px;padding:20px 24px}
+.top{grid-column:1/-1;display:flex;align-items:center;gap:22px;flex-wrap:wrap;border-bottom:1px solid var(--stage-line);padding-bottom:12px}
+.top h1{font-size:34px}.top h1 .em{color:var(--accent)}
+.live{display:inline-flex;align-items:center;gap:6px;font-family:var(--mono);font-size:11px;letter-spacing:.14em;color:var(--stage-muted)}
+.live i{width:9px;height:9px;border-radius:50%;background:var(--accent);animation:pulse 1.4s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}
+.kpi{display:flex;gap:26px;margin-left:auto}
+.kpi div{font-family:var(--mono);font-size:11px;letter-spacing:.1em;color:var(--stage-muted)}
+.kpi b{display:block;font-family:var(--display);font-size:36px;line-height:1;color:var(--stage-ink);font-variant-numeric:tabular-nums}
+.ticker{grid-column:1/-1;background:rgba(255,90,54,.09);border:1px solid var(--stage-line);border-left:4px solid var(--accent);padding:9px 14px;border-radius:9px;display:flex;gap:14px;align-items:center;overflow:hidden}
+.ticker .lab{font-family:var(--mono);font-size:10px;letter-spacing:.12em;color:var(--accent);flex:none}
+.ticker .txt{font-family:var(--display);font-size:22px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ticker .who{font-family:var(--mono);font-size:11px;color:var(--stage-muted);flex:none}
+.mapwrap{position:relative;min-height:0}
+.cloud{position:absolute;inset:0;overflow:hidden}
+.cloudword{position:absolute;transform:translate(-50%,-50%);white-space:nowrap;font-family:var(--display);font-weight:600;line-height:1;padding:1px 7px;border-radius:9px;background:rgba(255,255,255,.045);transition:left .9s cubic-bezier(.22,1,.36,1),top .9s cubic-bezier(.22,1,.36,1),opacity .5s}
+.cloudword.lead{background:rgba(255,90,54,.10)}
+.maplegend{position:absolute;left:4px;right:4px;bottom:2px;display:flex;flex-wrap:wrap;gap:4px 12px;font-family:var(--mono);font-size:10px;letter-spacing:.04em;color:var(--stage-muted)}
+.maplegend .lg{display:inline-flex;align-items:center;gap:4px}.maplegend .lg i{width:8px;height:8px;border-radius:50%}
+.maplegend .hint{margin-left:auto;opacity:.75}
+.side{display:flex;flex-direction:column;min-height:0}
+.side h3{font-family:var(--display);font-weight:600;font-size:14px;letter-spacing:.12em;text-transform:uppercase;color:var(--stage-muted);margin-bottom:12px}
+.rrow{display:grid;grid-template-columns:1fr 44px;gap:8px;align-items:center;margin-bottom:9px}
+.rrow .nm{font-family:var(--display);font-size:17px;font-weight:600;display:flex;align-items:center;gap:8px}
+.rrow .nm i{width:10px;height:10px;border-radius:50%;flex:none}
+.rrow .n{font-family:var(--mono);font-size:14px;text-align:right;font-variant-numeric:tabular-nums}
+.rrow .b{grid-column:1/-1;height:7px;background:var(--stage-line);border-radius:4px;overflow:hidden}
+.rrow .b i{display:block;height:100%;border-radius:4px;transition:width .6s}
+.toptxt{margin-top:16px;border-top:1px solid var(--stage-line);padding-top:14px}
+.sr{font-size:13px;line-height:1.25;margin-bottom:8px;display:flex;gap:8px}.sr b{font-family:var(--mono);color:var(--accent);flex:none}
+.empty{color:var(--stage-muted);font-size:14px;margin-top:40px;text-align:center}
+@media (max-width:820px){.stage{grid-template-columns:1fr;grid-template-rows:auto auto 46vh auto;overflow:auto;height:auto;min-height:100dvh}.kpi{margin-left:0;gap:18px}}
+</style>
+</head>
+<body>
+<div class="stage">
+  <div class="top">
+    <h1>O futuro do esporte <span class="em" id="subt">pela voz de vocês</span></h1>
+    <span class="live"><i></i>AO VIVO</span>
+    <div class="kpi">
+      <div>PARTICIPANTES<b id="kPart">0</b></div>
+      <div>IDEIAS<b id="kIdeias">0</b></div>
+      <div>SOLUÇÕES VOTADAS<b id="kSol">0</b></div>
+    </div>
+  </div>
+  <div class="ticker"><span class="lab">IDEIA MAIS RECENTE</span><span class="txt" id="tkTxt">aguardando as primeiras ideias…</span><span class="who" id="tkWho"></span></div>
+  <div class="mapwrap"><div class="cloud" id="cloud"></div><div class="maplegend" id="mapLeg"></div>
+    <div class="empty" id="cloudEmpty">As soluções mais escolhidas aparecem aqui, crescendo com os votos.</div>
+  </div>
+  <div class="side">
+    <h3>Teses mais escolhidas</h3>
+    <div id="rankRows"></div>
+    <div class="toptxt"><h3>Soluções líderes</h3><div id="topSols"></div></div>
+  </div>
+</div>
+<script>
+const $=(id)=>document.getElementById(id);
+const cloud=$('cloud'); let coloring={}; let legendDone=false;
+function fontFor(c,min,max){const t=max>min?(c-min)/(max-min):1;return 16+Math.round(t*t*44);}
+let bubbles={}; // id -> {el, count}
+function renderCloud(sol){
+  const W=cloud.clientWidth,H=cloud.clientHeight; if(!W||!H)return;
+  const items=sol.slice(0,16); const keep=new Set(items.map(s=>String(s.id)));
+  Object.keys(bubbles).forEach(k=>{if(!keep.has(k)){bubbles[k].el.remove();delete bubbles[k];}});
+  $('cloudEmpty').style.display=items.length?'none':'block';
+  if(!items.length)return;
+  const max=items[0].votos,min=items[items.length-1].votos;
+  items.forEach((s,idx)=>{let b=bubbles[s.id];if(!b){const el=document.createElement('span');el.className='cloudword';el.style.left='50%';el.style.top='50%';el.style.opacity='0';cloud.appendChild(el);b={el};bubbles[s.id]=b;}
+    b.el.textContent=s.texto;b.el.style.color=s.cor;b.el.classList.toggle('lead',idx===0);b.el.title=s.texto+' — '+s.votos+' votos';
+    let fs=fontFor(s.votos,min,max);b.el.style.fontSize=fs+'px';while(b.el.offsetWidth>W-16&&fs>13){fs-=2;b.el.style.fontSize=fs+'px';}});
+  const placed=[],cx=W/2,cy=H*0.44;
+  items.forEach(s=>{const el=bubbles[s.id].el,w=el.offsetWidth,h=el.offsetHeight;let x=cx,y=cy,ok=false;
+    for(let t=0;t<2800;t++){const a=t*0.35,r=t*1.7;x=cx+Math.cos(a)*r*1.28;y=cy+Math.sin(a)*r;
+      if(x-w/2<4||x+w/2>W-4||y-h/2<4||y+h/2>H-30)continue;
+      if(!placed.some(p=>Math.abs(p.x-x)<(p.w+w)/2+9&&Math.abs(p.y-y)<(p.h+h)/2+6)){ok=true;break;}}
+    if(ok){placed.push({x,y,w,h});el.style.left=x+'px';el.style.top=y+'px';el.style.opacity='1';}else{el.style.opacity='0';}});
+}
+function draw(d){
+  if(d.event&&d.event.subtitulo)$('subt').textContent=d.event.subtitulo.replace(/^o futuro do esporte /i,'');
+  $('kPart').textContent=d.totalPart; $('kIdeias').textContent=d.totalApr; $('kSol').textContent=d.totalVotos;
+  if(!legendDone && d.porTese){$('mapLeg').innerHTML=d.porTese.map(t=>'<span class="lg"><i style="background:'+t.cor+'"></i>'+t.nome+'</span>').join('')+'<span class="hint">quanto mais votos, maior a solução</span>';legendDone=true;}
+  const max=Math.max(1,...d.porTese.map(t=>t.n));
+  $('rankRows').innerHTML=d.porTese.map(t=>'<div class="rrow"><div class="nm"><i style="background:'+t.cor+'"></i>'+t.nome+'</div><div class="n">'+t.n+'</div><div class="b"><i style="width:'+(t.n/max*100)+'%;background:'+t.cor+'"></i></div></div>').join('');
+  $('topSols').innerHTML=(d.solucoes.slice(0,5).map(s=>'<div class="sr"><b>'+s.votos+'×</b><span>'+s.texto+'</span></div>').join(''))||'<div class="sr">sem votos ainda</div>';
+  if(d.recentes&&d.recentes[0]){$('tkTxt').textContent=d.recentes[0].frase;$('tkWho').textContent=(d.recentes[0].nome||'').toUpperCase();}
+  renderCloud(d.solucoes||[]);
+}
+async function tick(){try{const r=await fetch('/api/telao');const d=await r.json();draw(d);}catch(e){}}
+window.addEventListener('resize',()=>{});
+tick(); setInterval(tick,2500);
+</script>
+</body>
+</html>

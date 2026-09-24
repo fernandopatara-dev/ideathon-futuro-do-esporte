@@ -1,0 +1,276 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Admin — Ideathon Futuro do Esporte</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=Source+Sans+3:wght@400;600&family=JetBrains+Mono:wght@400;500&display=swap">
+<link rel="stylesheet" href="/app.css">
+<style>
+.bar{display:flex;align-items:center;gap:8px 18px;flex-wrap:wrap;padding-block:16px 10px;border-bottom:2px solid var(--ink);margin-bottom:18px}
+.brand{font-family:var(--display);font-weight:700;font-size:24px}.brand .em{color:var(--accent)}
+.brand small{display:block;font-family:var(--mono);font-size:10px;letter-spacing:.14em;color:var(--muted);font-weight:400;margin-top:3px}
+.tabs{display:flex;gap:4px;margin-left:auto;flex-wrap:wrap}
+.tab{border:1px solid var(--line);background:var(--surface);color:var(--muted);padding:7px 14px;font-family:var(--display);font-weight:600;font-size:16px;border-radius:4px;cursor:pointer}
+.tab[aria-selected=true]{background:var(--ink);color:var(--paper);border-color:var(--ink)}
+.view{display:none}.view.on{display:block}
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px;margin-bottom:18px}
+.st{background:var(--surface);border:1px solid var(--line);padding:12px 14px;border-radius:8px}
+.st div{font-family:var(--mono);font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted)}
+.st b{display:block;font-family:var(--display);font-size:32px;line-height:1.05;font-variant-numeric:tabular-nums}
+.st b.warn{color:var(--warn)}.st b.acc{color:var(--accent)}
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:8px;margin-bottom:18px}
+.ph{display:flex;flex-wrap:wrap;gap:8px;align-items:center;padding:12px 14px;border-bottom:1px solid var(--line)}
+.ph h3{font-family:var(--display);font-size:22px;margin-right:10px}
+.ph input,.ph select{width:auto;padding:7px 10px;font-size:14px}
+.ph .sp{flex:1}
+.sm{border:1px solid var(--line);background:var(--surface);color:var(--ink);padding:7px 12px;border-radius:6px;font-family:var(--display);font-weight:600;font-size:15px;cursor:pointer;text-decoration:none;display:inline-block}
+.sm.pri{background:var(--ink);color:var(--paper);border-color:var(--ink)}
+.sm.acc{background:var(--accent);color:#fff;border-color:var(--accent)}
+.tscroll{overflow-x:auto}
+table{border-collapse:collapse;width:100%;min-width:900px;font-size:14px}
+th{text-align:left;font-family:var(--display);font-size:14px;letter-spacing:.05em;text-transform:uppercase;color:var(--muted);padding:9px 10px;border-bottom:1px solid var(--line);white-space:nowrap}
+td{padding:8px 10px;border-bottom:1px solid var(--line);vertical-align:middle}
+td.m{font-family:var(--mono);font-size:12px;color:var(--muted);white-space:nowrap}
+.dot{width:9px;height:9px;border-radius:50%;display:inline-block;margin-right:6px;vertical-align:middle}
+.status{font-family:var(--mono);font-size:11px;padding:2px 7px;border-radius:3px}
+.status.aprovada{background:var(--ok-soft);color:var(--ok)}
+.status.pendente{background:var(--warn-soft);color:var(--warn)}
+.status.bloqueada{background:var(--bad-soft);color:var(--bad)}
+.tiny{border:1px solid var(--line);background:transparent;color:var(--ink);font-family:var(--mono);font-size:11px;padding:3px 7px;border-radius:4px;margin:1px 3px 1px 0;cursor:pointer}
+.tiny:hover{border-color:var(--accent)}
+.tiny.on{background:var(--accent);color:#fff;border-color:var(--accent)}
+.chips{display:flex;flex-wrap:wrap;gap:3px;max-width:280px}
+.chip{font-family:var(--mono);font-size:10.5px;background:var(--soft);border-radius:4px;padding:2px 6px;color:var(--muted)}
+.login{max-width:360px;margin:60px auto;background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:24px}
+.login h2{font-size:28px;margin-bottom:6px}.login p{color:var(--muted);margin:0 0 16px}
+.teseCard{border:1px solid var(--line);border-radius:8px;margin:12px 14px;padding:12px 14px}
+.teseCard .thd{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.teseCard .thd input[type=text]{width:auto}
+.teseCard .thd .nome{font-family:var(--display);font-size:20px;font-weight:700}
+.solrow{display:flex;gap:8px;align-items:center;margin:6px 0;padding-left:20px}
+.solrow input{flex:1}
+.logrow{display:grid;grid-template-columns:150px 160px 1fr 120px;gap:10px;padding:8px 14px;border-bottom:1px solid var(--line);font-size:13px;align-items:center}
+.logrow.head{font-family:var(--display);text-transform:uppercase;font-size:13px;color:var(--muted);letter-spacing:.05em}
+.logrow .m{font-family:var(--mono);font-size:12px;color:var(--muted)}
+.role{font-family:var(--mono);font-size:10px;background:var(--soft);color:var(--muted);border-radius:3px;padding:1px 6px;margin-left:6px}
+.qrbox{display:flex;gap:20px;align-items:center;flex-wrap:wrap;padding:14px}
+.qrbox canvas{background:#fff;border-radius:8px;padding:8px}
+.field{margin:10px 14px}
+.field label{margin-top:8px}
+.switch{display:flex;align-items:center;gap:8px;margin:10px 14px;font-size:15px}
+.note{font-size:13px;color:var(--muted);margin:0 14px 14px}
+@media (max-width:640px){.logrow{grid-template-columns:1fr 1fr}}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <div id="loginView">
+    <div class="login">
+      <h2>Admin</h2>
+      <p class="mono" style="font-size:12px;letter-spacing:.1em">IDEATHON FUTURO DO ESPORTE</p>
+      <div><label for="senha">Senha</label><input type="password" id="senha"></div>
+      <div class="err" id="eLogin" style="margin-top:10px"></div>
+      <button class="btn wide" id="bLogin" style="margin-top:14px">Entrar</button>
+    </div>
+  </div>
+
+  <div id="app" style="display:none">
+    <div class="bar">
+      <div class="brand">Ideathon <span class="em">Futuro do Esporte</span><small>PAINEL ADMIN · ARENA HUB</small></div>
+      <div class="tabs" role="tablist">
+        <button class="tab" role="tab" aria-selected="true" data-v="ideias">Ideias</button>
+        <button class="tab" role="tab" aria-selected="false" data-v="teses">Teses e soluções</button>
+        <button class="tab" role="tab" aria-selected="false" data-v="config">Configurações</button>
+        <button class="tab" role="tab" aria-selected="false" data-v="log">Log de acessos</button>
+      </div>
+      <button class="sm" id="bLogout">Sair</button>
+    </div>
+
+    <!-- IDEIAS -->
+    <div class="view on" id="v-ideias">
+      <div class="stats" id="stats"></div>
+      <div class="panel">
+        <div class="ph">
+          <h3>Base de ideias</h3>
+          <input type="text" id="q" placeholder="Buscar nome, e-mail ou ideia">
+          <select id="fTese"><option value="">Todas as teses</option></select>
+          <select id="fStatus"><option value="">Todos os status</option><option value="pendente">Aguardando revisão</option><option value="aprovada">Aprovadas</option><option value="bloqueada">Bloqueadas</option></select>
+          <span class="sp"></span>
+          <a class="sm" id="csv" href="/api/admin/export.csv">Exportar CSV</a>
+        </div>
+        <div class="tscroll"><table>
+          <thead><tr><th>Sel.</th><th>#</th><th>Hora</th><th>Nome</th><th>E-mail</th><th>Tese</th><th>3 soluções</th><th>Frase</th><th>Nota</th><th>Status</th><th>Agente / ação</th></tr></thead>
+          <tbody id="rows"></tbody>
+        </table></div>
+      </div>
+    </div>
+
+    <!-- TESES -->
+    <div class="view" id="v-teses">
+      <div class="panel">
+        <div class="ph"><h3>Teses e soluções sugeridas</h3><span class="note" style="margin:0">Edite os textos, adicione ou desative. Os participantes escolhem 3 soluções por tese.</span><span class="sp"></span>
+          <input type="text" id="ntNome" placeholder="Nova tese (nome)"><input type="text" id="ntSlug" placeholder="slug" style="width:100px">
+          <input type="color" id="ntCor" value="#FF5A36" style="width:44px;padding:2px">
+          <button class="sm acc" id="addTese">+ Tese</button>
+        </div>
+        <div id="teseList"></div>
+      </div>
+    </div>
+
+    <!-- CONFIG -->
+    <div class="view" id="v-config">
+      <div class="panel">
+        <div class="ph"><h3>Configurações do evento</h3></div>
+        <div class="field"><label for="cfgNome">Nome do evento</label><input type="text" id="cfgNome"></div>
+        <div class="field"><label for="cfgSub">Subtítulo (telão)</label><input type="text" id="cfgSub"></div>
+        <div class="field"><label for="cfgMax">Máx. de caracteres da frase</label><input type="text" id="cfgMax" style="width:120px"></div>
+        <div class="switch"><input type="checkbox" id="cfgAberto"><label for="cfgAberto" style="margin:0;text-transform:none;font-family:var(--body);font-size:15px;color:var(--ink)">Inscrições abertas</label></div>
+        <div class="switch"><input type="checkbox" id="cfgIA"><label for="cfgIA" style="margin:0;text-transform:none;font-family:var(--body);font-size:15px;color:var(--ink)">Moderação por IA ligada</label></div>
+        <p class="note" id="iaNote"></p>
+        <div class="field"><button class="btn" id="bSaveCfg">Salvar configurações</button></div>
+      </div>
+      <div class="panel">
+        <div class="ph"><h3>QR Code da ação</h3><span class="note" style="margin:0">Aponta para a página de participação. Baixe e imprima.</span></div>
+        <div class="qrbox">
+          <canvas id="qr"></canvas>
+          <div>
+            <div class="mono" id="qrurl" style="font-size:13px;word-break:break-all;margin-bottom:10px"></div>
+            <button class="sm pri" id="dlQr">Baixar PNG</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- LOG -->
+    <div class="view" id="v-log">
+      <div class="panel">
+        <div class="ph"><h3>Log de acessos e ações</h3><span class="note" style="margin:0">Toda entrada e ação do admin, com horário e IP.</span></div>
+        <div class="logrow head"><div>Horário</div><div>Usuário</div><div>Ação</div><div>IP</div></div>
+        <div id="logRows"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrious/4.0.2/qrious.min.js"></script>
+<script>
+const $=(id)=>document.getElementById(id);
+let TESES=[];
+
+// ---------- login ----------
+async function checkAuth(){const r=await fetch('/api/admin/me');const d=await r.json();if(d.admin){showApp();}else{$('loginView').style.display='block';$('app').style.display='none';}}
+$('bLogin').addEventListener('click',doLogin);
+$('senha').addEventListener('keydown',e=>{if(e.key==='Enter')doLogin();});
+async function doLogin(){$('eLogin').classList.remove('on');
+  const r=await fetch('/api/admin/login',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({senha:$('senha').value})});
+  if(r.ok){showApp();}else{const d=await r.json();$('eLogin').textContent=d.error||'Erro';$('eLogin').classList.add('on');}}
+$('bLogout').addEventListener('click',async()=>{await fetch('/api/admin/logout',{method:'POST'});location.reload();});
+function showApp(){$('loginView').style.display='none';$('app').style.display='block';loadAll();}
+
+// ---------- tabs ----------
+document.querySelectorAll('.tab').forEach(t=>t.addEventListener('click',()=>{
+  document.querySelectorAll('.tab').forEach(x=>x.setAttribute('aria-selected',x===t));
+  document.querySelectorAll('.view').forEach(v=>v.classList.toggle('on',v.id==='v-'+t.dataset.v));
+  if(t.dataset.v==='config')renderQR();
+}));
+
+async function loadAll(){loadConfigFilters();await loadTeses();loadIdeas();loadOverview();loadEventCfg();loadLog();}
+setInterval(()=>{if($('app').style.display!=='none'&&$('v-ideias').classList.contains('on')){loadIdeas();loadOverview();}},6000);
+
+// ---------- overview ----------
+async function loadOverview(){const r=await fetch('/api/admin/overview');if(!r.ok)return;const d=await r.json();
+  $('stats').innerHTML=[['Participantes',d.stats.total,''],['Aprovadas',d.stats.aprovadas,''],['Aguardando revisão',d.stats.pendentes,'warn'],['Bloqueadas',d.stats.bloqueadas,''],['Selecionadas',d.stats.selecionadas,'acc']]
+    .map(s=>'<div class="st"><div>'+s[0]+'</div><b class="'+s[2]+'">'+s[1]+'</b></div>').join('');
+  $('iaNote').textContent=d.iaConfigurada?'IA configurada (chave ANTHROPIC_API_KEY presente).':'Sem chave de IA: a moderação usa só a lista de termos. Configure ANTHROPIC_API_KEY para ligar o agente de IA.';
+}
+
+// ---------- filters ----------
+async function loadConfigFilters(){const r=await fetch('/api/config');const c=await r.json();
+  const f=$('fTese');f.innerHTML='<option value="">Todas as teses</option>'+(c.teses||[]).map(t=>'<option value="'+t.slug+'">'+t.nome+'</option>').join('');}
+['q','fTese','fStatus'].forEach(id=>$(id).addEventListener('input',loadIdeas));
+
+// ---------- ideias ----------
+function teseColor(slug){const t=TESES.find(x=>x.slug===slug);return t?t.cor:'#999';}
+function teseNome(slug){const t=TESES.find(x=>x.slug===slug);return t?t.nome:slug;}
+async function loadIdeas(){
+  const p=new URLSearchParams();if($('q').value)p.set('q',$('q').value);if($('fTese').value)p.set('tese',$('fTese').value);if($('fStatus').value)p.set('status',$('fStatus').value);
+  const r=await fetch('/api/admin/ideas?'+p.toString());if(!r.ok)return;const d=await r.json();
+  $('rows').innerHTML=d.ideas.map(i=>{
+    const chips=(i.picks_textos||[]).map(t=>'<span class="chip">'+esc(t)+'</span>').join('');
+    const fmt=new Date(i.criado_em).toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'});
+    const notas=[1,2,3,4,5].map(n=>'<button class="tiny'+(i.score===n?' on':'')+'" onclick="setScore('+i.id+','+n+')">'+n+'</button>').join('');
+    return '<tr>'+
+      '<td><input type="checkbox" '+(i.selecionada?'checked':'')+' onchange="toggleSel('+i.id+',this.checked)"></td>'+
+      '<td class="m">#'+String(i.id).padStart(4,'0')+'</td>'+
+      '<td class="m">'+fmt+'</td>'+
+      '<td>'+esc(i.nome)+' '+esc(i.sobrenome)+'</td>'+
+      '<td class="m">'+esc(i.email)+'</td>'+
+      '<td><span class="dot" style="background:'+teseColor(i.tese_slug)+'"></span>'+esc(teseNome(i.tese_slug))+'</td>'+
+      '<td><div class="chips">'+chips+'</div></td>'+
+      '<td style="max-width:240px">'+esc(i.frase)+'</td>'+
+      '<td style="white-space:nowrap">'+notas+'</td>'+
+      '<td><span class="status '+i.status+'">'+i.status+'</span></td>'+
+      '<td class="m">'+esc(i.agente_resultado||'')+'<br>'+
+        (i.status!=='aprovada'?'<button class="tiny" onclick="setStatus('+i.id+",'aprovada')\">aprovar</button>":'')+
+        (i.status!=='bloqueada'?'<button class="tiny" onclick="setStatus('+i.id+",'bloqueada')\">bloquear</button>":'')+
+      '</td></tr>';
+  }).join('')||'<tr><td colspan="11" style="padding:22px;color:var(--muted)">Nenhuma ideia com esses filtros.</td></tr>';
+}
+async function patchIdea(id,body){await fetch('/api/admin/ideas/'+id,{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify(body)});loadIdeas();loadOverview();}
+window.setStatus=(id,status)=>patchIdea(id,{status});
+window.toggleSel=(id,v)=>patchIdea(id,{selecionada:v});
+window.setScore=(id,n)=>patchIdea(id,{score:n});
+
+// ---------- teses ----------
+async function loadTeses(){const r=await fetch('/api/admin/teses');if(!r.ok)return;const d=await r.json();TESES=d.teses;renderTeses();}
+function renderTeses(){
+  $('teseList').innerHTML=TESES.map(t=>{
+    const sols=t.solucoes.map(s=>'<div class="solrow"><input type="text" value="'+esc(s.texto)+'" onchange="saveSol('+s.id+',this.value)"><button class="tiny" onclick="delSol('+s.id+')">excluir</button></div>').join('');
+    return '<div class="teseCard"><div class="thd">'+
+      '<span class="dot" style="width:14px;height:14px;background:'+t.cor+'"></span>'+
+      '<input type="text" value="'+esc(t.nome)+'" onchange="saveTese('+t.id+',{nome:this.value})" style="font-family:var(--display);font-weight:700;font-size:18px">'+
+      '<input type="color" value="'+t.cor+'" onchange="saveTese('+t.id+',{cor:this.value})" style="width:40px;padding:2px">'+
+      '<span class="mono" style="font-size:11px;color:var(--muted)">'+t.slug+'</span>'+
+      '<label style="margin:0 0 0 auto;text-transform:none;font-family:var(--body);font-size:13px;color:var(--muted);display:flex;gap:5px;align-items:center"><input type="checkbox" style="width:auto" '+(t.ativa?'checked':'')+' onchange="saveTese('+t.id+',{ativa:this.checked})">ativa</label>'+
+      '<button class="tiny" onclick="delTese('+t.id+')">excluir tese</button>'+
+      '</div>'+sols+
+      '<div class="solrow"><input type="text" placeholder="Adicionar solução…" id="ns'+t.id+'"><button class="sm acc" onclick="addSol('+t.id+')">+ Solução</button></div>'+
+      '</div>';
+  }).join('');
+}
+window.saveTese=async(id,body)=>{await fetch('/api/admin/teses/'+id,{method:'PUT',headers:{'content-type':'application/json'},body:JSON.stringify(body)});loadTeses();loadConfigFilters();};
+window.delTese=async(id)=>{if(!confirm('Excluir a tese e todas as suas soluções?'))return;await fetch('/api/admin/teses/'+id,{method:'DELETE'});loadTeses();loadConfigFilters();};
+window.saveSol=async(id,texto)=>{await fetch('/api/admin/solucoes/'+id,{method:'PUT',headers:{'content-type':'application/json'},body:JSON.stringify({texto})});};
+window.delSol=async(id)=>{await fetch('/api/admin/solucoes/'+id,{method:'DELETE'});loadTeses();};
+window.addSol=async(teseId)=>{const inp=$('ns'+teseId);const texto=inp.value.trim();if(texto.length<3)return;await fetch('/api/admin/teses/'+teseId+'/solucoes',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({texto})});loadTeses();};
+$('addTese').addEventListener('click',async()=>{const nome=$('ntNome').value.trim();let slug=$('ntSlug').value.trim().toLowerCase().replace(/[^a-z0-9]/g,'');
+  if(!nome||!slug)return alert('Preencha nome e slug.');
+  const r=await fetch('/api/admin/teses',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({nome,slug,cor:$('ntCor').value})});
+  if(r.ok){$('ntNome').value='';$('ntSlug').value='';loadTeses();loadConfigFilters();}else{const d=await r.json();alert(d.error||'Erro');}});
+
+// ---------- config ----------
+async function loadEventCfg(){const r=await fetch('/api/admin/overview');if(!r.ok)return;const d=await r.json();const e=d.event;
+  $('cfgNome').value=e.nome;$('cfgSub').value=e.subtitulo;$('cfgMax').value=e.max_frase;$('cfgAberto').checked=e.aberto;$('cfgIA').checked=e.moderacao_ia;}
+$('bSaveCfg').addEventListener('click',async()=>{
+  const body={nome:$('cfgNome').value,subtitulo:$('cfgSub').value,aberto:$('cfgAberto').checked,moderacao_ia:$('cfgIA').checked,max_frase:parseInt($('cfgMax').value,10)||190};
+  const r=await fetch('/api/admin/event',{method:'PUT',headers:{'content-type':'application/json'},body:JSON.stringify(body)});
+  $('bSaveCfg').textContent=r.ok?'Salvo ✓':'Erro';setTimeout(()=>$('bSaveCfg').textContent='Salvar configurações',1500);});
+
+// ---------- QR ----------
+let qrObj=null;
+function renderQR(){const url=location.origin+'/participar.html';$('qrurl').textContent=url;
+  try{qrObj=new QRious({element:$('qr'),value:url,size:200,background:'#fff',foreground:'#14213D',level:'M'});}catch(e){}}
+$('dlQr').addEventListener('click',()=>{try{const a=document.createElement('a');a.href=$('qr').toDataURL('image/png');a.download='qr-ideathon.png';a.click();}catch(e){}});
+
+// ---------- log ----------
+async function loadLog(){const r=await fetch('/api/admin/log');if(!r.ok)return;const d=await r.json();
+  $('logRows').innerHTML=d.log.map(l=>'<div class="logrow"><div class="m">'+new Date(l.criado_em).toLocaleString('pt-BR',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'})+'</div><div>'+esc(l.usuario)+'<span class="role">'+esc(l.papel)+'</span></div><div>'+esc(l.acao)+'</div><div class="m">'+esc(l.ip||'')+'</div></div>').join('')||'<div class="logrow"><div>sem registros</div></div>';}
+setInterval(()=>{if($('app').style.display!=='none'&&$('v-log').classList.contains('on'))loadLog();},8000);
+
+function esc(s){return String(s==null?'':s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));}
+checkAuth();
+</script>
+</body>
+</html>

@@ -1,0 +1,179 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Participar — Ideathon Futuro do Esporte</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=Source+Sans+3:wght@400;600&family=JetBrains+Mono:wght@400;500&display=swap">
+<link rel="stylesheet" href="/app.css">
+<style>
+body{background:var(--paper)}
+.shell{max-width:480px;margin:0 auto;min-height:100dvh;display:flex;flex-direction:column;padding:20px 18px calc(20px + env(safe-area-inset-bottom))}
+.hd{display:flex;justify-content:space-between;align-items:center;font-family:var(--mono);font-size:11px;color:var(--muted);letter-spacing:.08em;margin-bottom:8px}
+.brand{font-family:var(--display);font-weight:700;font-size:20px}.brand .em{color:var(--accent)}
+.prog{display:flex;gap:4px;margin-bottom:18px}
+.prog i{height:4px;flex:1;background:var(--line);border-radius:2px}
+.prog i.on{background:var(--accent)}
+.step{display:none;flex-direction:column;gap:13px;flex:1}
+.step.on{display:flex}
+h2{font-size:30px;text-wrap:balance;margin-top:4px}
+h2 .em{color:var(--accent)}
+.sub{color:var(--muted);margin:0}
+.row2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.chk{display:flex;gap:8px;align-items:flex-start;font-size:13px;color:var(--muted)}
+.chk input{margin-top:3px;width:auto}
+.spacer{flex:1;min-height:8px}
+.teses{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.tese{border:1.5px solid var(--line);background:var(--surface);color:var(--ink);border-radius:11px;padding:12px 11px;text-align:left;font-family:var(--display);font-weight:600;font-size:17px;line-height:1.05;display:flex;flex-direction:column;gap:6px;cursor:pointer}
+.tese i{width:10px;height:10px;border-radius:50%}
+.tese[aria-pressed=true]{border-color:var(--accent);background:var(--accent-soft)}
+.picklbl{display:flex;justify-content:space-between;font-family:var(--mono);font-size:12px;color:var(--muted)}
+.picklbl b{color:var(--accent)}
+.sols{display:flex;flex-direction:column;gap:7px}
+.sol{border:1.5px solid var(--line);background:var(--surface);border-radius:10px;padding:11px;text-align:left;font-size:14px;line-height:1.25;display:flex;gap:9px;align-items:flex-start;cursor:pointer;color:var(--ink)}
+.sol .bx{width:18px;height:18px;border:1.5px solid var(--line);border-radius:5px;flex:none;margin-top:1px;display:flex;align-items:center;justify-content:center;font-size:12px;color:#fff}
+.sol[aria-pressed=true]{border-color:var(--accent);background:var(--accent-soft)}
+.sol[aria-pressed=true] .bx{background:var(--accent);border-color:var(--accent)}
+.count{font-family:var(--mono);font-size:11px;color:var(--muted);text-align:right}
+.done{text-align:center;align-items:center}
+.done .big{font-family:var(--display);font-weight:700;font-size:60px;color:var(--accent);line-height:1}
+.done .picks{width:100%;display:flex;flex-direction:column;gap:5px;margin-top:6px}
+.done .picks div{background:var(--soft);border-radius:8px;padding:8px 10px;text-align:left;font-size:13px;color:var(--muted)}
+.tiny{font-family:var(--mono);font-size:12px;color:var(--muted)}
+</style>
+</head>
+<body>
+<div class="shell">
+  <div class="hd"><span class="brand">Ideathon <span class="em">Futuro do Esporte</span></span><span id="stepLbl">1 / 4</span></div>
+  <div class="prog" id="prog"><i class="on"></i><i></i><i></i><i></i></div>
+
+  <div class="step on" id="s1">
+    <h2>Quem é <span class="em">você</span>?</h2>
+    <p class="sub">Leva um minuto. Cada pessoa participa uma única vez.</p>
+    <div class="row2">
+      <div><label for="nome">Nome</label><input type="text" id="nome" autocomplete="given-name"></div>
+      <div><label for="sobrenome">Sobrenome</label><input type="text" id="sobrenome" autocomplete="family-name"></div>
+    </div>
+    <div><label for="email">E-mail</label><input type="email" id="email" autocomplete="email" placeholder="voce@email.com"></div>
+    <div><label for="modalidade">Modalidade que você pratica ou acompanha</label><select id="modalidade"><option value="">Escolha…</option></select></div>
+    <div class="chk"><input type="checkbox" id="consent"><span>Entendi que meu primeiro nome e minha ideia podem aparecer no telão e que meus dados serão usados só para este ideathon e o estudo da Arena Hub.</span></div>
+    <div class="err" id="e1"></div>
+    <div class="spacer"></div>
+    <button class="btn wide" id="b1">Continuar</button>
+  </div>
+
+  <div class="step" id="s2">
+    <h2>Se você mudasse o esporte do futuro, <span class="em">por onde começaria?</span></h2>
+    <p class="sub">Escolha a área que mais tem a ver com a sua ideia.</p>
+    <div class="teses" id="teseBtns"></div>
+    <div class="err" id="e2"></div>
+    <div class="spacer"></div>
+    <button class="btn wide" id="b2">Continuar</button>
+    <button class="btn ghost wide" id="back2">Voltar</button>
+  </div>
+
+  <div class="step" id="s3">
+    <h2>Escolha <span class="em">3 caminhos</span></h2>
+    <p class="sub" id="s3sub">Marque as 3 soluções que você mais faria.</p>
+    <div class="picklbl"><span id="s3tese">Tese</span><span><b id="s3n">0</b> / 3 escolhidas</span></div>
+    <div class="sols" id="solList"></div>
+    <div class="err" id="e3"></div>
+    <div class="spacer"></div>
+    <button class="btn wide" id="b3" disabled>Continuar</button>
+    <button class="btn ghost wide" id="back3">Voltar</button>
+  </div>
+
+  <div class="step" id="s4">
+    <h2>Agora, a <span class="em">sua</span> ideia</h2>
+    <p class="sub">Junte suas escolhas em uma frase. Ex.: "Uma arena que vira escola nos dias sem jogo e usa energia solar".</p>
+    <div><label for="frase">Sua ideia em uma frase</label><textarea id="frase" maxlength="190"></textarea><div class="count"><span id="cnt">0</span> / <span id="max">190</span></div></div>
+    <p class="tiny">Sem nomes de pessoas e sem ofensas: um agente de moderação verifica antes de ir ao telão.</p>
+    <div class="err" id="e4"></div>
+    <div class="spacer"></div>
+    <button class="btn wide" id="b4">Enviar para o telão</button>
+    <button class="btn ghost wide" id="back4">Voltar</button>
+  </div>
+
+  <div class="step done" id="s5">
+    <span class="tag" id="doneTese">Tese</span>
+    <div class="big" id="doneNum">#0000</div>
+    <h2 id="doneTitle">Sua ideia está <span class="em">no telão!</span></h2>
+    <div class="picks" id="donePicks"></div>
+    <div class="spacer"></div>
+    <p class="tiny">Cada pessoa participa uma vez — obrigado por deixar a sua marca.</p>
+    <a class="btn ghost wide" href="/telao.html">Ver o telão</a>
+  </div>
+</div>
+
+<script>
+const $ = (id) => document.getElementById(id);
+let CFG = null, pickedTese = null, picks = new Set(), me = null, MAX = 190;
+
+function goto(n){['s1','s2','s3','s4','s5'].forEach((id,i)=>$(id).classList.toggle('on',i+1===n));
+  $('stepLbl').textContent=Math.min(n,4)+' / 4';[...$('prog').children].forEach((el,i)=>el.classList.toggle('on',i<Math.min(n,4)));
+  window.scrollTo(0,0);}
+function err(id,msg,agent){const e=$(id);e.innerHTML=(agent?'<span class="ag">'+agent+'</span>':'')+msg;e.classList.add('on');}
+function clr(id){$(id).classList.remove('on');}
+
+fetch('/api/config').then(r=>r.json()).then(cfg=>{
+  CFG=cfg; MAX=(cfg.event&&cfg.event.max_frase)||190;
+  $('frase').maxLength=MAX; $('max').textContent=MAX;
+  const md=$('modalidade'); (cfg.modalidades||[]).forEach(m=>{const o=document.createElement('option');o.textContent=m;md.appendChild(o);});
+  const tb=$('teseBtns');
+  (cfg.teses||[]).forEach(te=>{const b=document.createElement('button');b.type='button';b.className='tese';b.setAttribute('aria-pressed','false');
+    b.innerHTML='<i style="background:'+te.cor+'"></i>'+te.nome;
+    b.addEventListener('click',()=>{pickedTese=te;[...tb.children].forEach(x=>x.setAttribute('aria-pressed','false'));b.setAttribute('aria-pressed','true');clr('e2');});
+    tb.appendChild(b);});
+  if(cfg.event && cfg.event.aberto===false){err('e1','As inscrições estão encerradas no momento.');$('b1').disabled=true;}
+}).catch(()=>err('e1','Não consegui carregar. Recarregue a página.'));
+
+$('b1').addEventListener('click',()=>{clr('e1');
+  const nome=$('nome').value.trim(),sob=$('sobrenome').value.trim(),email=$('email').value.trim(),md=$('modalidade').value;
+  if(nome.length<2)return err('e1','Escreve seu nome.');
+  if(sob.length<2)return err('e1','Coloca também o sobrenome — usamos para garantir uma resposta por pessoa.');
+  if(!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email))return err('e1','Esse e-mail não parece completo. Confere?');
+  if(!md)return err('e1','Escolhe a modalidade que mais tem a ver com você.');
+  if(!$('consent').checked)return err('e1','Precisamos da sua ciência sobre o uso dos dados para continuar.');
+  me={nome,sobrenome:sob,email,modalidade:md};goto(2);});
+$('back2').addEventListener('click',()=>goto(1));
+$('back3').addEventListener('click',()=>goto(2));
+$('back4').addEventListener('click',()=>goto(3));
+
+$('b2').addEventListener('click',()=>{if(!pickedTese)return err('e2','Escolhe uma área para continuar.');buildSols();goto(3);});
+function buildSols(){picks=new Set();$('s3n').textContent='0';$('s3tese').textContent=pickedTese.nome;
+  $('s3sub').textContent='Destas soluções da tese "'+pickedTese.nome+'", marque as 3 que você mais faria.';$('b3').disabled=true;
+  const list=$('solList');list.innerHTML='';
+  pickedTese.solucoes.forEach(sol=>{const b=document.createElement('button');b.type='button';b.className='sol';b.setAttribute('aria-pressed','false');
+    b.innerHTML='<span class="bx">✓</span><span>'+sol.texto+'</span>';
+    b.addEventListener('click',()=>{const on=b.getAttribute('aria-pressed')==='true';
+      if(on){picks.delete(sol.id);b.setAttribute('aria-pressed','false');}
+      else{if(picks.size>=3)return err('e3','Você já escolheu 3. Desmarque uma para trocar.');picks.add(sol.id);b.setAttribute('aria-pressed','true');clr('e3');}
+      $('s3n').textContent=picks.size;$('b3').disabled=picks.size!==3;});
+    list.appendChild(b);});}
+$('b3').addEventListener('click',()=>{if(picks.size!==3)return err('e3','Escolha exatamente 3 soluções.');goto(4);});
+$('frase').addEventListener('input',e=>{$('cnt').textContent=e.target.value.length;clr('e4');});
+
+$('b4').addEventListener('click',async()=>{clr('e4');
+  const frase=$('frase').value.trim();
+  if(frase.length<12)return err('e4','Conta um pouco mais: qual é a sua ideia em uma frase?');
+  $('b4').disabled=true;$('b4').textContent='Enviando…';
+  try{
+    const r=await fetch('/api/ideas',{method:'POST',headers:{'content-type':'application/json'},
+      body:JSON.stringify({...me,tese:pickedTese.slug,picks:[...picks],frase})});
+    const data=await r.json();
+    if(!r.ok){
+      $('b4').disabled=false;$('b4').textContent='Enviar para o telão';
+      if(data.blocked)return err('e4',data.error,'AGENTE DE MODERAÇÃO');
+      if(r.status===409)return err('e4',data.error,'AGENTE · RESPOSTA ÚNICA');
+      return err('e4',data.error||'Não consegui enviar. Tenta de novo.');
+    }
+    $('doneNum').textContent='#'+String(data.id).padStart(4,'0');
+    $('doneTese').textContent=pickedTese.nome;$('doneTese').style.background=pickedTese.cor+'22';$('doneTese').style.color=pickedTese.cor;
+    if(data.pendente){$('doneTitle').innerHTML='Ideia <span class="em">recebida!</span>';}
+    const dp=$('donePicks');dp.innerHTML='<div style="font-weight:600;color:var(--ink)">Suas 3 escolhas:</div>'+(data.picksTextos||[]).map(t=>'<div>• '+t+'</div>').join('')+(data.pendente?'<div style="color:var(--warn)">Sua frase está em revisão e aparece no telão assim que for aprovada.</div>':'');
+    goto(5);
+  }catch(e){$('b4').disabled=false;$('b4').textContent='Enviar para o telão';err('e4','Sem conexão. Tenta de novo em instantes.');}
+});
+</script>
+</body>
+</html>
