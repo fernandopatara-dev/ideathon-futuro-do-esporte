@@ -4,15 +4,17 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Admin — Ideathon Futuro do Esporte</title>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=Source+Sans+3:wght@400;600&family=JetBrains+Mono:wght@400;500&display=swap">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Oswald:wght@500;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap">
 <link rel="stylesheet" href="/app.css">
 <style>
-.bar{display:flex;align-items:center;gap:8px 18px;flex-wrap:wrap;padding-block:16px 10px;border-bottom:2px solid var(--ink);margin-bottom:18px}
+.bar{display:flex;align-items:center;gap:8px 18px;flex-wrap:wrap;padding-block:16px 10px;border-bottom:2px solid var(--brand);margin-bottom:18px}
 .brand{font-family:var(--display);font-weight:700;font-size:24px}.brand .em{color:var(--accent)}
 .brand small{display:block;font-family:var(--mono);font-size:10px;letter-spacing:.14em;color:var(--muted);font-weight:400;margin-top:3px}
 .tabs{display:flex;gap:4px;margin-left:auto;flex-wrap:wrap}
 .tab{border:1px solid var(--line);background:var(--surface);color:var(--muted);padding:7px 14px;font-family:var(--display);font-weight:600;font-size:16px;border-radius:4px;cursor:pointer}
-.tab[aria-selected=true]{background:var(--ink);color:var(--paper);border-color:var(--ink)}
+.tab[aria-selected=true]{background:var(--brand);color:#fff;border-color:var(--brand)}
 .view{display:none}.view.on{display:block}
 .stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px;margin-bottom:18px}
 .st{background:var(--surface);border:1px solid var(--line);padding:12px 14px;border-radius:8px}
@@ -25,7 +27,7 @@
 .ph input,.ph select{width:auto;padding:7px 10px;font-size:14px}
 .ph .sp{flex:1}
 .sm{border:1px solid var(--line);background:var(--surface);color:var(--ink);padding:7px 12px;border-radius:6px;font-family:var(--display);font-weight:600;font-size:15px;cursor:pointer;text-decoration:none;display:inline-block}
-.sm.pri{background:var(--ink);color:var(--paper);border-color:var(--ink)}
+.sm.pri{background:var(--brand);color:#fff;border-color:var(--brand)}
 .sm.acc{background:var(--accent);color:#fff;border-color:var(--accent)}
 .tscroll{overflow-x:auto}
 table{border-collapse:collapse;width:100%;min-width:900px;font-size:14px}
@@ -112,7 +114,7 @@ td.m{font-family:var(--mono);font-size:12px;color:var(--muted);white-space:nowra
       <div class="panel">
         <div class="ph"><h3>Teses e soluções sugeridas</h3><span class="note" style="margin:0">Edite os textos, adicione ou desative. Os participantes escolhem 3 soluções por tese.</span><span class="sp"></span>
           <input type="text" id="ntNome" placeholder="Nova tese (nome)"><input type="text" id="ntSlug" placeholder="slug" style="width:100px">
-          <input type="color" id="ntCor" value="#FF5A36" style="width:44px;padding:2px">
+          <input type="color" id="ntCor" value="#2C8BCD" style="width:44px;padding:2px">
           <button class="sm acc" id="addTese">+ Tese</button>
         </div>
         <div id="teseList"></div>
@@ -261,7 +263,7 @@ $('bSaveCfg').addEventListener('click',async()=>{
 // ---------- QR ----------
 let qrObj=null;
 function renderQR(){const url=location.origin+'/participar.html';$('qrurl').textContent=url;
-  try{qrObj=new QRious({element:$('qr'),value:url,size:200,background:'#fff',foreground:'#14213D',level:'M'});}catch(e){}}
+  try{qrObj=new QRious({element:$('qr'),value:url,size:200,background:'#fff',foreground:'#273572',level:'M'});}catch(e){}}
 $('dlQr').addEventListener('click',()=>{try{const a=document.createElement('a');a.href=$('qr').toDataURL('image/png');a.download='qr-ideathon.png';a.click();}catch(e){}});
 
 // ---------- log ----------

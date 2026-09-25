@@ -4,27 +4,29 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Telão — Ideathon Futuro do Esporte</title>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=Source+Sans+3:wght@400;600&family=JetBrains+Mono:wght@400;500&display=swap">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Oswald:wght@500;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap">
 <link rel="stylesheet" href="/app.css">
 <style>
-body{background:var(--stage);color:var(--stage-ink);overflow:hidden}
+body{background:linear-gradient(160deg,#1b2657,var(--stage) 55%,#1c2f4a);color:var(--stage-ink);overflow:hidden}
 .stage{height:100dvh;display:grid;grid-template-columns:1fr 320px;grid-template-rows:auto auto 1fr;gap:14px 20px;padding:20px 24px}
 .top{grid-column:1/-1;display:flex;align-items:center;gap:22px;flex-wrap:wrap;border-bottom:1px solid var(--stage-line);padding-bottom:12px}
-.top h1{font-size:34px}.top h1 .em{color:var(--accent)}
-.live{display:inline-flex;align-items:center;gap:6px;font-family:var(--mono);font-size:11px;letter-spacing:.14em;color:var(--stage-muted)}
-.live i{width:9px;height:9px;border-radius:50%;background:var(--accent);animation:pulse 1.4s infinite}
+.top h1{font-size:34px}.top h1 .em{color:var(--yellow)}
+.live{display:inline-flex;align-items:center;gap:6px;font-family:var(--display);font-size:12px;letter-spacing:.14em;color:#fff}
+.live i{width:9px;height:9px;border-radius:50%;background:var(--green);animation:pulse 1.4s infinite}
 @keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}
 .kpi{display:flex;gap:26px;margin-left:auto}
 .kpi div{font-family:var(--mono);font-size:11px;letter-spacing:.1em;color:var(--stage-muted)}
-.kpi b{display:block;font-family:var(--display);font-size:36px;line-height:1;color:var(--stage-ink);font-variant-numeric:tabular-nums}
-.ticker{grid-column:1/-1;background:rgba(255,90,54,.09);border:1px solid var(--stage-line);border-left:4px solid var(--accent);padding:9px 14px;border-radius:9px;display:flex;gap:14px;align-items:center;overflow:hidden}
-.ticker .lab{font-family:var(--mono);font-size:10px;letter-spacing:.12em;color:var(--accent);flex:none}
+.kpi b{display:block;font-family:var(--display);font-weight:700;font-size:38px;line-height:1;color:var(--yellow);font-variant-numeric:tabular-nums}
+.ticker{grid-column:1/-1;background:rgba(244,177,28,.10);border:1px solid var(--stage-line);border-left:4px solid var(--yellow);padding:9px 14px;border-radius:9px;display:flex;gap:14px;align-items:center;overflow:hidden}
+.ticker .lab{font-family:var(--display);font-size:11px;letter-spacing:.12em;color:var(--yellow);flex:none}
 .ticker .txt{font-family:var(--display);font-size:22px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .ticker .who{font-family:var(--mono);font-size:11px;color:var(--stage-muted);flex:none}
 .mapwrap{position:relative;min-height:0}
 .cloud{position:absolute;inset:0;overflow:hidden}
 .cloudword{position:absolute;transform:translate(-50%,-50%);white-space:nowrap;font-family:var(--display);font-weight:600;line-height:1;padding:1px 7px;border-radius:9px;background:rgba(255,255,255,.045);transition:left .9s cubic-bezier(.22,1,.36,1),top .9s cubic-bezier(.22,1,.36,1),opacity .5s}
-.cloudword.lead{background:rgba(255,90,54,.10)}
+.cloudword.lead{background:rgba(244,177,28,.14)}
 .maplegend{position:absolute;left:4px;right:4px;bottom:2px;display:flex;flex-wrap:wrap;gap:4px 12px;font-family:var(--mono);font-size:10px;letter-spacing:.04em;color:var(--stage-muted)}
 .maplegend .lg{display:inline-flex;align-items:center;gap:4px}.maplegend .lg i{width:8px;height:8px;border-radius:50%}
 .maplegend .hint{margin-left:auto;opacity:.75}

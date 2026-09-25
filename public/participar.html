@@ -4,16 +4,20 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Participar — Ideathon Futuro do Esporte</title>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=Source+Sans+3:wght@400;600&family=JetBrains+Mono:wght@400;500&display=swap">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Oswald:wght@500;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap">
 <link rel="stylesheet" href="/app.css">
 <style>
 body{background:var(--paper)}
-.shell{max-width:480px;margin:0 auto;min-height:100dvh;display:flex;flex-direction:column;padding:20px 18px calc(20px + env(safe-area-inset-bottom))}
-.hd{display:flex;justify-content:space-between;align-items:center;font-family:var(--mono);font-size:11px;color:var(--muted);letter-spacing:.08em;margin-bottom:8px}
-.brand{font-family:var(--display);font-weight:700;font-size:20px}.brand .em{color:var(--accent)}
-.prog{display:flex;gap:4px;margin-bottom:18px}
-.prog i{height:4px;flex:1;background:var(--line);border-radius:2px}
-.prog i.on{background:var(--accent)}
+.shell{max-width:480px;margin:0 auto;min-height:100dvh;display:flex;flex-direction:column;padding:0 0 calc(20px + env(safe-area-inset-bottom))}
+.topbar{background:linear-gradient(135deg,var(--brand),#1c2f4a);color:#fff;padding:18px 18px 16px}
+.hd{display:flex;justify-content:space-between;align-items:center;font-family:var(--mono);font-size:11px;color:#c9d3f2;letter-spacing:.08em;margin-bottom:10px}
+.brand{font-family:var(--display);font-weight:700;font-size:19px;text-transform:uppercase;color:#fff}.brand .em{color:var(--yellow)}
+.prog{display:flex;gap:4px}
+.prog i{height:5px;flex:1;background:#ffffff2e;border-radius:3px}
+.prog i.on{background:var(--yellow)}
+.body{padding:20px 18px 0;display:flex;flex-direction:column;flex:1}
 .step{display:none;flex-direction:column;gap:13px;flex:1}
 .step.on{display:flex}
 h2{font-size:30px;text-wrap:balance;margin-top:4px}
@@ -44,8 +48,11 @@ h2 .em{color:var(--accent)}
 </head>
 <body>
 <div class="shell">
-  <div class="hd"><span class="brand">Ideathon <span class="em">Futuro do Esporte</span></span><span id="stepLbl">1 / 4</span></div>
-  <div class="prog" id="prog"><i class="on"></i><i></i><i></i><i></i></div>
+  <div class="topbar">
+    <div class="hd"><span class="brand">Ideathon <span class="em">Futuro do Esporte</span></span><span id="stepLbl">1 / 4</span></div>
+    <div class="prog" id="prog"><i class="on"></i><i></i><i></i><i></i></div>
+  </div>
+  <div class="body">
 
   <div class="step on" id="s1">
     <h2>Sua <span class="em">inscrição</span></h2>
@@ -55,7 +62,7 @@ h2 .em{color:var(--accent)}
     <p class="tiny">Não pedimos nome nem e-mail — só o seu número de inscrição e a sua modalidade.</p>
     <div class="err" id="e1"></div>
     <div class="spacer"></div>
-    <button class="btn wide" id="b1">Continuar</button>
+    <button class="btn yellow wide" id="b1">Continuar</button>
   </div>
 
   <div class="step" id="s2">
@@ -64,7 +71,7 @@ h2 .em{color:var(--accent)}
     <div class="teses" id="teseBtns"></div>
     <div class="err" id="e2"></div>
     <div class="spacer"></div>
-    <button class="btn wide" id="b2">Continuar</button>
+    <button class="btn yellow wide" id="b2">Continuar</button>
     <button class="btn ghost wide" id="back2">Voltar</button>
   </div>
 
@@ -75,7 +82,7 @@ h2 .em{color:var(--accent)}
     <div class="sols" id="solList"></div>
     <div class="err" id="e3"></div>
     <div class="spacer"></div>
-    <button class="btn wide" id="b3" disabled>Continuar</button>
+    <button class="btn yellow wide" id="b3" disabled>Continuar</button>
     <button class="btn ghost wide" id="back3">Voltar</button>
   </div>
 
@@ -86,7 +93,7 @@ h2 .em{color:var(--accent)}
     <p class="tiny">Sem nomes de pessoas e sem ofensas: um agente de moderação verifica antes de ir ao telão.</p>
     <div class="err" id="e4"></div>
     <div class="spacer"></div>
-    <button class="btn wide" id="b4">Enviar para o telão</button>
+    <button class="btn yellow wide" id="b4">Enviar para o telão</button>
     <button class="btn ghost wide" id="back4">Voltar</button>
   </div>
 
@@ -98,6 +105,7 @@ h2 .em{color:var(--accent)}
     <div class="spacer"></div>
     <p class="tiny">Cada pessoa participa uma vez — obrigado por deixar a sua marca.</p>
     <a class="btn ghost wide" href="/telao.html">Ver o telão</a>
+  </div>
   </div>
 </div>
 
