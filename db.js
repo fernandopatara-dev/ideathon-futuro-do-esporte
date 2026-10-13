@@ -19,81 +19,81 @@ export async function query(text, params) {
 
 // ---- Teses e soluções padrão (editáveis depois no admin) ----
 const SEED_TESES = [
-  { slug: 'fas', nome: 'Engajamento com fãs', cor: '#FF5A36', solucoes: [
-    'App que deixa a torcida escolher a música de entrada',
+  { slug: 'fas', nome: 'Engajamento com fãs', cor: '#2C8BCD', solucoes: [
+    'Torcida escolhe a música de entrada pelo app',
     'Ingresso mais barato para quem vem de transporte público',
     'Torcida vota quem dá a entrevista pós-jogo',
-    'Card colecionável digital que pontua a cada ida ao estádio',
+    'Card digital que pontua a cada ida ao estádio',
     'Liga de várzea com transmissão e figurinhas',
-    'Museu virtual do clube montado com fotos da torcida',
+    'Avatar do atleta para interagir com a torcida',
+    'Comunidade virtual do time o ano todo',
+    'Realidade aumentada com curiosidades do jogo ao vivo',
     'Programa "primeira vez no estádio" para crianças',
-    'Enquete ao vivo que muda o show do intervalo',
-    'Sócio-torcedor jovem com benefício na escola',
-    'Mural digital de recados da torcida para o time' ] },
-  { slug: 'perf', nome: 'Performance humana', cor: '#14A89A', solucoes: [
+    'Sócio-torcedor jovem com benefício na escola' ] },
+  { slug: 'perf', nome: 'Performance humana', cor: '#F4B11C', solucoes: [
     'Sensor no tênis que avisa risco de lesão',
     'Treino por IA para quem não tem técnico',
+    'App de saúde mental e controle emocional',
     'Colete que mede hidratação e lembra de beber',
-    'Óculos que mostram padrões do adversário',
-    'App de sono e recuperação para atleta estudante',
-    'Fisioterapia por vídeo para atleta do interior',
-    'Análise de vídeo do celular corrige o gesto',
-    'Plano nutricional acessível para a base',
-    'Pulseira que evita overtraining',
-    'Mentoria de atleta profissional para jovem da quebrada' ] },
-  { slug: 'midia', nome: 'Mídia e entretenimento', cor: '#F2C14E', solucoes: [
+    'App de sono e recuperação para atleta-estudante',
+    'Fisioterapia por vídeo onde não há clínica',
+    'Análise de vídeo do celular que corrige o gesto',
+    'Alto rendimento com baixo orçamento',
+    'Plano de longevidade esportiva do atleta',
+    'Mentoria de atleta profissional para a base' ] },
+  { slug: 'midia', nome: 'Mídia e entretenimento', cor: '#90C33A', solucoes: [
     'Transmissão em que você escolhe a câmera',
-    'Narração feita por jovens da comunidade',
+    'Narração colaborativa feita pela torcida',
     'Cortes de 3 min sobre atletas paralímpicos',
-    'Realidade aumentada que replica lances em casa',
+    'Transmissão imersiva em 360°',
     'Reprise dos melhores lances em Libras',
+    'Desafios gamificados durante o jogo',
+    'Estúdio para o atleta criar conteúdo nas redes',
     'Podcast feito pelos próprios atletas da base',
-    'Bastidores ao vivo do vestiário',
-    'Figurinhas em vídeo dos lances do campeonato',
     'Comentarista por IA que explica a regra na hora',
     'Plataforma de clipes que remunera quem cria' ] },
-  { slug: 'gestao', nome: 'Gestão e regras', cor: '#7C9CF5', solucoes: [
-    'Cartão verde para quem ajuda adversário caído',
-    'Metade da comissão técnica com mulheres',
+  { slug: 'gestao', nome: 'Gestão e regras', cor: '#316181', solucoes: [
+    'Cartão verde para quem ajuda o adversário caído',
     'Tempo parado de verdade, sem cera',
     'Árbitro explica a decisão no telão',
+    'Placar de transparência das decisões',
     'Adolescente com voto no conselho do clube',
+    'Comissão de atletas com voz nas regras',
     'Finanças do clube abertas num app',
     'Punição maior para racismo na arquibancada',
-    'Cotas de base para escola pública',
-    'Regras iguais no esporte feminino e masculino',
-    'Fair play julgado pela própria torcida' ] },
-  { slug: 'sust', nome: 'Sustentabilidade', cor: '#5CC46B', solucoes: [
+    'Novos formatos de competição mais dinâmicos',
+    'Mesma estrutura e visibilidade para o esporte feminino' ] },
+  { slug: 'sust', nome: 'Sustentabilidade', cor: '#17A2B8', solucoes: [
     'Uniformes de garrafa PET recolhida no estádio',
     'Refletor que só liga com gente na arquibancada',
     'Copos retornáveis com cashback',
-    'Uma árvore plantada por gol marcado',
-    'Placar do CO2 economizado por quem veio a pé',
+    'App que integra o transporte no dia de jogo',
     'Energia solar cobrindo o telhado da arena',
     'Água da chuva reaproveitada no gramado',
-    'Transporte coletivo grátis no dia de jogo',
+    'Arena multiuso para esporte e comunidade',
+    'Banco de doação de equipamento esportivo',
     'Coleta seletiva gamificada na saída',
-    'Camisa reciclada vira nova camisa' ] },
-  { slug: 'prod', nome: 'Produtos inteligentes', cor: '#E27BD1', solucoes: [
+    'Materiais reaproveitados viram nova camisa' ] },
+  { slug: 'prod', nome: 'Produtos inteligentes', cor: '#E0567A', solucoes: [
     'Bola que conta passes certos no celular',
     'Chuteira que se ajusta sozinha ao pé',
-    'Prancha que grava a onda e monta o vídeo',
+    'Sensores que viram treino personalizado',
     'Rede de vôlei que apita ao toque',
-    'Pulseira que vira placar de energia da torcida',
+    'Ecossistema digital do atleta num app só',
     'Camisa que mostra os batimentos do jogador',
     'Apito eletrônico que registra toda falta',
     'Trave com sensor de gol automático',
     'Tornozeleira que mede a explosão do salto',
     'App que vira qualquer quadra em quadra oficial' ] },
-  { slug: 'arenas', nome: 'Arenas inteligentes', cor: '#4FC3F7', solucoes: [
+  { slug: 'arenas', nome: 'Arenas inteligentes', cor: '#7B57D8', solucoes: [
     'Tradução do que o técnico grita para a torcida',
     'Cadeira que vibra com a batida da torcida',
     'Quadra pública que acende ao chegar alguém',
     'Estádio que vira cinema e escola sem jogo',
     'Fila zero: lanche pelo app chega na cadeira',
-    'Espaço para cadeirante em todos os setores',
+    'Acessibilidade total em todos os setores',
     'Wi-Fi com replay instantâneo na mão',
-    'Vestiário com projeto social do bairro',
+    'Espaço de educação e formação na arena',
     'Iluminação que muda de cor com o jogo',
     'Sensor de lotação que abre portões no pico' ] },
 ];
@@ -189,6 +189,25 @@ export async function initSchema() {
       }
     }
     console.log('[db] Seed de teses e soluções criado.');
+  } else if (process.env.RESEED_CONTENT === '1') {
+    // Refresh de conteúdo (nomes, cores e soluções) sem apagar participações.
+    // Ativar setando RESEED_CONTENT=1 no Render; remover a variável depois de aplicar.
+    for (let i = 0; i < SEED_TESES.length; i++) {
+      const t = SEED_TESES[i];
+      const up = await query(
+        `INSERT INTO teses (slug, nome, cor, ordem, ativa) VALUES ($1,$2,$3,$4,TRUE)
+         ON CONFLICT (slug) DO UPDATE SET nome=EXCLUDED.nome, cor=EXCLUDED.cor, ordem=EXCLUDED.ordem, ativa=TRUE
+         RETURNING id;`,
+        [t.slug, t.nome, t.cor, i]
+      );
+      const teseId = up.rows[0].id;
+      await query('DELETE FROM solucoes WHERE tese_id=$1;', [teseId]);
+      for (let j = 0; j < t.solucoes.length; j++) {
+        await query('INSERT INTO solucoes (tese_id, texto, ordem, ativa) VALUES ($1,$2,$3,TRUE);',
+          [teseId, t.solucoes[j], j]);
+      }
+    }
+    console.log('[db] Conteúdo (temas/soluções) atualizado via RESEED_CONTENT.');
   }
 
   const md = await query('SELECT COUNT(*)::int AS n FROM modalidades;');

@@ -78,7 +78,7 @@ h2 .em{color:var(--accent)}
   <div class="step" id="s3">
     <h2>Escolha <span class="em">3 caminhos</span></h2>
     <p class="sub" id="s3sub">Marque as 3 soluções que você mais faria.</p>
-    <div class="picklbl"><span id="s3tese">Tese</span><span><b id="s3n">0</b> / 3 escolhidas</span></div>
+    <div class="picklbl"><span id="s3tese">Tema</span><span><b id="s3n">0</b> / 3 escolhidas</span></div>
     <div class="sols" id="solList"></div>
     <div class="err" id="e3"></div>
     <div class="spacer"></div>
@@ -98,7 +98,7 @@ h2 .em{color:var(--accent)}
   </div>
 
   <div class="step done" id="s5">
-    <span class="tag" id="doneTese">Tese</span>
+    <span class="tag" id="doneTese">Tema</span>
     <div class="big" id="doneNum">#0000</div>
     <h2 id="doneTitle">Sua ideia está <span class="em">no telão!</span></h2>
     <div class="picks" id="donePicks"></div>
@@ -143,7 +143,7 @@ $('back4').addEventListener('click',()=>goto(3));
 
 $('b2').addEventListener('click',()=>{if(!pickedTese)return err('e2','Escolhe uma área para continuar.');buildSols();goto(3);});
 function buildSols(){picks=new Set();$('s3n').textContent='0';$('s3tese').textContent=pickedTese.nome;
-  $('s3sub').textContent='Destas soluções da tese "'+pickedTese.nome+'", marque as 3 que você mais faria.';$('b3').disabled=true;
+  $('s3sub').textContent='Destas soluções do tema "'+pickedTese.nome+'", marque as 3 que você mais faria.';$('b3').disabled=true;
   const list=$('solList');list.innerHTML='';
   pickedTese.solucoes.forEach(sol=>{const b=document.createElement('button');b.type='button';b.className='sol';b.setAttribute('aria-pressed','false');
     b.innerHTML='<span class="bx">✓</span><span>'+sol.texto+'</span>';
