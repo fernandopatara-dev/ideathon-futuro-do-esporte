@@ -262,7 +262,7 @@ $('bSaveCfg').addEventListener('click',async()=>{
 
 // ---------- QR ----------
 let qrObj=null;
-function renderQR(){const url=location.origin+'/participar.html';$('qrurl').textContent=url;
+function renderQR(){const url='https://ideathon-cob-26.arenahub.tech/participar.html';$('qrurl').textContent=url;
   try{qrObj=new QRious({element:$('qr'),value:url,size:200,background:'#fff',foreground:'#273572',level:'M'});}catch(e){}}
 $('dlQr').addEventListener('click',()=>{try{const a=document.createElement('a');a.href=$('qr').toDataURL('image/png');a.download='qr-ideathon.png';a.click();}catch(e){}});
 
