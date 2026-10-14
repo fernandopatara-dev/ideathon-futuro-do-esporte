@@ -98,7 +98,7 @@ const SEED_TESES = [
     'Sensor de lotação que abre portões no pico' ] },
 ];
 
-const MODALIDADES = ['Futebol','Vôlei','Basquete','Natação','Atletismo','Skate','Judô','Tênis','Surfe','Ginástica','Handebol','E-sports','Outra'];
+const MODALIDADES = ['Águas Abertas','Atletismo','Badminton','Basquetebol','Ciclismo','Esgrima','Futsal','Ginástica Artística','Ginástica Rítmica','Handebol','Judô','Natação','Remo Virtual','Taekwondo','Tênis de Mesa','Tiro com Arco','Triatlo','Voleibol','Vôlei de Praia','Wrestling','Outra'];
 
 export async function initSchema() {
   await query(`
@@ -207,7 +207,12 @@ export async function initSchema() {
           [teseId, t.solucoes[j], j]);
       }
     }
-    console.log('[db] Conteúdo (temas/soluções) atualizado via RESEED_CONTENT.');
+    // Refresh das modalidades (substitui a lista sem afetar participações, pois ideas.modalidade é texto).
+    await query('DELETE FROM modalidades;');
+    for (let i = 0; i < MODALIDADES.length; i++) {
+      await query('INSERT INTO modalidades (nome, ordem) VALUES ($1,$2) ON CONFLICT (nome) DO NOTHING;', [MODALIDADES[i], i]);
+    }
+    console.log('[db] Conteúdo (temas/soluções/modalidades) atualizado via RESEED_CONTENT.');
   }
 
   const md = await query('SELECT COUNT(*)::int AS n FROM modalidades;');
