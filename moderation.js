@@ -66,12 +66,7 @@ function listHit(text) {
   return null;
 }
 
-const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
-// Status HTTP transitórios (limite de taxa / sobrecarga) que valem uma segunda tentativa.
-// Eles respondem rápido, então re-tentar não aumenta a espera do participante.
-const TRANSIENT = new Set([429, 500, 502, 503, 529]);
-
-async function askAI(frase) {
+async function askAI(frase, { timeoutMs = 4500 } = {}) {
   const key = process.env.ANTHROPIC_API_KEY;
   if (!key) return null; // IA não configurada
   const model = process.env.MOD_MODEL || 'claude-haiku-5-5';
@@ -100,49 +95,43 @@ Frase: """${(frase || '').slice(0, 1000)}"""`;
     messages: [{ role: 'user', content: prompt }],
   });
 
-  // Até 2 tentativas. Re-tenta só em erro transitório (limite de taxa/sobrecarga),
-  // que responde rápido; em timeout/rede não re-tenta para não dobrar a espera.
-  for (let attempt = 1; attempt <= 2; attempt++) {
-    try {
-      const resp = await fetch('https://api.anthropic.com/v1/messages', {
-        method: 'POST',
-        headers: {
-          'content-type': 'application/json',
-          'x-api-key': key,
-          'anthropic-version': '2023-06-01',
-        },
-        body: payload,
-        signal: AbortSignal.timeout(10000),
-      });
-      if (!resp.ok) {
-        if (attempt === 1 && TRANSIENT.has(resp.status)) {
-          await sleep(350 + Math.floor(Math.random() * 350));
-          continue;
-        }
-        console.warn('[moderation] IA HTTP', resp.status);
-        return { error: true };
-      }
-      const data = await resp.json();
-      const txt = (data.content && data.content[0] && data.content[0].text) || '';
-      const m = txt.match(/\{[\s\S]*\}/);
-      if (!m) return { error: true };
-      const j = JSON.parse(m[0]);
-      return {
-        decisao: ['aprovar', 'revisar', 'bloquear'].includes(j.decisao) ? j.decisao : 'revisar',
-        tipo: j.tipo || 'outro',
-        motivo: (j.motivo || '').slice(0, 240),
-      };
-    } catch (e) {
-      console.warn('[moderation] IA erro:', e.message);
+  // Uma tentativa, com teto de tempo curto (padrão 4,5s) para caber no orçamento de
+  // resposta ao participante. Se falhar (timeout, limite de taxa, etc.) devolve {error},
+  // e o "sweeper" do servidor re-modera a frase em segundo plano, fora do caminho do envio.
+  try {
+    const resp = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: {
+        'content-type': 'application/json',
+        'x-api-key': key,
+        'anthropic-version': '2023-06-01',
+      },
+      body: payload,
+      signal: AbortSignal.timeout(timeoutMs),
+    });
+    if (!resp.ok) {
+      console.warn('[moderation] IA HTTP', resp.status);
       return { error: true };
     }
+    const data = await resp.json();
+    const txt = (data.content && data.content[0] && data.content[0].text) || '';
+    const m = txt.match(/\{[\s\S]*\}/);
+    if (!m) return { error: true };
+    const j = JSON.parse(m[0]);
+    return {
+      decisao: ['aprovar', 'revisar', 'bloquear'].includes(j.decisao) ? j.decisao : 'revisar',
+      tipo: j.tipo || 'outro',
+      motivo: (j.motivo || '').slice(0, 240),
+    };
+  } catch (e) {
+    console.warn('[moderation] IA erro:', e.message);
+    return { error: true };
   }
-  return { error: true };
 }
 
 // Retorna { status, resultado, motivo }
 // status: 'aprovada' | 'pendente' | 'bloqueada'
-export async function moderate(frase, { moderacaoIA = true } = {}) {
+export async function moderate(frase, { moderacaoIA = true, timeoutMs } = {}) {
   // Camada 1 e 2 (instantâneas)
   const hit = listHit(frase);
   if (hit && hit.acao === 'bloquear') {
@@ -157,7 +146,7 @@ export async function moderate(frase, { moderacaoIA = true } = {}) {
 
   // Camada 3 (IA)
   if (moderacaoIA) {
-    const ai = await askAI(frase);
+    const ai = await askAI(frase, timeoutMs ? { timeoutMs } : {});
     if (ai && !ai.error) {
       if (ai.decisao === 'bloquear') {
         return { status: 'bloqueada', resultado: 'Agente: bloqueada (' + ai.tipo + ')', motivo: ai.motivo || 'Conteúdo não permitido no telão.' };
