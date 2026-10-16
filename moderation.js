@@ -114,10 +114,16 @@ Responda SOMENTE com JSON válido:
 
 Frase: """${(frase || '').slice(0, 1000)}"""`;
 
+  // Prefill: forçamos a resposta do modelo a JÁ COMEÇAR em JSON. Assim ele não
+  // "conversa" nem divaga antes do JSON (causa de "IA indisponível" em frases vagas).
+  const PREFILL = '{"decisao": "';
   const payload = JSON.stringify({
     model,
-    max_tokens: 200,
-    messages: [{ role: 'user', content: prompt }],
+    max_tokens: 320,
+    messages: [
+      { role: 'user', content: prompt },
+      { role: 'assistant', content: PREFILL },
+    ],
   });
 
   // Espera uma vaga no limitador (no máx. AI_MAX chamadas simultâneas). Se não houver
@@ -141,13 +147,32 @@ Frase: """${(frase || '').slice(0, 1000)}"""`;
     }
     const data = await resp.json();
     const txt = (data.content && data.content[0] && data.content[0].text) || '';
-    const m = txt.match(/\{[\s\S]*\}/);
-    if (!m) return { error: true };
-    const j = JSON.parse(m[0]);
+    // Reconstrói a resposta completa somando o prefill ao que o modelo gerou.
+    const raw = PREFILL + txt;
+    // Extração robusta por campo: sobrevive a JSON truncado (max_tokens) e a
+    // qualquer texto extra que o modelo coloque depois. O que importa é a decisão.
+    const dMatch = raw.match(/"decisao"\s*:\s*"?(aprovar|revisar|bloquear)/i);
+    if (!dMatch) {
+      // 2ª tentativa: tenta um JSON.parse clássico antes de desistir.
+      try {
+        const m = raw.match(/\{[\s\S]*\}/);
+        if (m) {
+          const j = JSON.parse(m[0]);
+          if (['aprovar', 'revisar', 'bloquear'].includes(j.decisao)) {
+            return { decisao: j.decisao, tipo: j.tipo || 'outro', motivo: (j.motivo || '').slice(0, 240) };
+          }
+        }
+      } catch (_) { /* ignora */ }
+      console.warn('[moderation] IA sem decisao. Trecho:', raw.slice(0, 160));
+      return { error: true };
+    }
+    const decisao = dMatch[1].toLowerCase();
+    const tMatch = raw.match(/"tipo"\s*:\s*"([^"]*)"/i);
+    const moMatch = raw.match(/"motivo"\s*:\s*"((?:[^"\\]|\\.)*)"/i);
     return {
-      decisao: ['aprovar', 'revisar', 'bloquear'].includes(j.decisao) ? j.decisao : 'revisar',
-      tipo: j.tipo || 'outro',
-      motivo: (j.motivo || '').slice(0, 240),
+      decisao,
+      tipo: (tMatch && tMatch[1]) || 'outro',
+      motivo: ((moMatch && moMatch[1]) || '').replace(/\\"/g, '"').slice(0, 240),
     };
   } catch (e) {
     console.warn('[moderation] IA erro:', e.message);
