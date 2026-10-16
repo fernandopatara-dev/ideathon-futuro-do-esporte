@@ -100,6 +100,8 @@ td.m{font-family:var(--mono);font-size:12px;color:var(--muted);white-space:nowra
           <select id="fTese"><option value="">Todas as teses</option></select>
           <select id="fStatus"><option value="">Todos os status</option><option value="pendente">Aguardando revisão</option><option value="aprovada">Aprovadas</option><option value="bloqueada">Bloqueadas</option></select>
           <span class="sp"></span>
+          <button class="sm" id="bReload" title="Recarregar a lista agora">↻ Atualizar</button>
+          <button class="sm acc" id="bReavalPend" title="Reavaliar com o agente todas as ideias pendentes">Reavaliar pendentes</button>
           <a class="sm" id="csv" href="/api/admin/export.csv">Exportar CSV</a>
         </div>
         <div class="tscroll"><table>
@@ -217,6 +219,8 @@ async function loadIdeas(){
       '<td class="m">'+esc(i.agente_resultado||'')+'<br>'+
         (i.status!=='aprovada'?'<button class="tiny" onclick="setStatus('+i.id+",'aprovada')\">aprovar</button>":'')+
         (i.status!=='bloqueada'?'<button class="tiny" onclick="setStatus('+i.id+",'bloqueada')\">bloquear</button>":'')+
+        (i.status==='pendente'?'<button class="tiny" onclick="remoderate('+i.id+')">reavaliar IA</button>':'')+
+        '<button class="tiny" onclick="delIdea('+i.id+')" title="Excluir em definitivo">excluir</button>'+
       '</td></tr>';
   }).join('')||'<tr><td colspan="11" style="padding:22px;color:var(--muted)">Nenhuma ideia com esses filtros.</td></tr>';
 }
@@ -224,6 +228,23 @@ async function patchIdea(id,body){await fetch('/api/admin/ideas/'+id,{method:'PO
 window.setStatus=(id,status)=>patchIdea(id,{status});
 window.toggleSel=(id,v)=>patchIdea(id,{selecionada:v});
 window.setScore=(id,n)=>patchIdea(id,{score:n});
+
+// Reavaliar com o agente (re-roda a moderação na frase já salva)
+window.remoderate=async(id)=>{try{await fetch('/api/admin/ideas/'+id,{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({reavaliar:true})});}catch(e){}loadIdeas();loadOverview();};
+// Excluir ideia (registros de teste / lixo) — definitivo
+window.delIdea=async(id)=>{if(!confirm('Excluir esta ideia em definitivo?'))return;try{await fetch('/api/admin/ideas/'+id,{method:'DELETE'});}catch(e){}loadIdeas();loadOverview();};
+// Botão Atualizar: recarrega a lista e os números agora
+$('bReload').addEventListener('click',()=>{loadIdeas();loadOverview();});
+// Reavaliar todas as pendentes de uma vez (sequencial, para não sobrecarregar a IA)
+$('bReavalPend').addEventListener('click',async()=>{
+const r=await fetch('/api/admin/ideas?status=pendente');if(!r.ok)return;const d=await r.json();
+const ids=(d.ideas||[]).map(i=>i.id);
+if(!ids.length){alert('Nenhuma ideia pendente.');return;}
+if(!confirm('Reavaliar '+ids.length+' ideia(s) pendente(s) com o agente?'))return;
+const b=$('bReavalPend');const txt=b.textContent;b.disabled=true;
+for(let k=0;k<ids.length;k++){b.textContent='Reavaliando '+(k+1)+'/'+ids.length+'…';
+try{await fetch('/api/admin/ideas/'+ids[k],{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({reavaliar:true})});}catch(e){}}
+b.disabled=false;b.textContent=txt;loadIdeas();loadOverview();});
 
 // ---------- teses ----------
 async function loadTeses(){const r=await fetch('/api/admin/teses');if(!r.ok)return;const d=await r.json();TESES=d.teses;renderTeses();}
