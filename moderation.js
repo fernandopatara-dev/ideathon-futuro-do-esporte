@@ -109,21 +109,16 @@ citar uma marca/clube de forma pejorativa, ou for ambígua a ponto de merecer ol
 
 APROVAR (decisao "aprovar") somente se for uma ideia construtiva, adequada, sem nenhum dos itens acima.
 
-Responda SOMENTE com JSON válido:
+IMPORTANTE: responda APENAS com o objeto JSON abaixo. Nada antes, nada depois.
+Comece a resposta com { e termine com }. Não escreva nenhuma explicação fora do JSON.
 {"decisao":"aprovar|revisar|bloquear","tipo":"ok|ofensa|odio|sexual|ameaca|nome|animal|marca|dados|outro","motivo":"curto, amigável, em português, falando com um adolescente"}
 
 Frase: """${(frase || '').slice(0, 1000)}"""`;
 
-  // Prefill: forçamos a resposta do modelo a JÁ COMEÇAR em JSON. Assim ele não
-  // "conversa" nem divaga antes do JSON (causa de "IA indisponível" em frases vagas).
-  const PREFILL = '{"decisao": "';
   const payload = JSON.stringify({
     model,
-    max_tokens: 320,
-    messages: [
-      { role: 'user', content: prompt },
-      { role: 'assistant', content: PREFILL },
-    ],
+    max_tokens: 400,
+    messages: [{ role: 'user', content: prompt }],
   });
 
   // Espera uma vaga no limitador (no máx. AI_MAX chamadas simultâneas). Se não houver
@@ -142,13 +137,13 @@ Frase: """${(frase || '').slice(0, 1000)}"""`;
       signal: AbortSignal.timeout(fetchMs),
     });
     if (!resp.ok) {
-      console.warn('[moderation] IA HTTP', resp.status);
+      const body = await resp.text().catch(() => '');
+      console.warn('[moderation] IA HTTP', resp.status, body.slice(0, 300));
       return { error: true };
     }
     const data = await resp.json();
     const txt = (data.content && data.content[0] && data.content[0].text) || '';
-    // Reconstrói a resposta completa somando o prefill ao que o modelo gerou.
-    const raw = PREFILL + txt;
+    const raw = txt;
     // Extração robusta por campo: sobrevive a JSON truncado (max_tokens) e a
     // qualquer texto extra que o modelo coloque depois. O que importa é a decisão.
     const dMatch = raw.match(/"decisao"\s*:\s*"?(aprovar|revisar|bloquear)/i);
