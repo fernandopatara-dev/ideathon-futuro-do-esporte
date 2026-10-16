@@ -66,7 +66,33 @@ function listHit(text) {
   return null;
 }
 
-async function askAI(frase, { timeoutMs = 4500 } = {}) {
+// --- Limitador de concorrência das chamadas de IA ---
+// Um pico de envios simultâneos dispararia dezenas de chamadas à Anthropic ao mesmo
+// tempo, que responde com limite de taxa (e tudo cai em "pendente"). Aqui no máximo
+// AI_MAX chamadas rodam de uma vez; as excedentes esperam um pouco por uma vaga e, se
+// não conseguem a tempo, caem em "pendente" para o sweeper re-tentar depois — sem nunca
+// prender o participante esperando.
+const AI_MAX = parseInt(process.env.AI_MAX_CONCURRENCY || '3', 10);
+let aiActive = 0;
+const aiWaiters = [];
+function acquireSlot(waitMs) {
+  return new Promise((resolve) => {
+    if (aiActive < AI_MAX) { aiActive++; resolve(true); return; }
+    const w = { done: false };
+    const timer = setTimeout(() => {
+      if (!w.done) { w.done = true; const i = aiWaiters.indexOf(w); if (i >= 0) aiWaiters.splice(i, 1); resolve(false); }
+    }, waitMs);
+    w.grant = () => { if (!w.done) { w.done = true; clearTimeout(timer); aiActive++; resolve(true); } };
+    aiWaiters.push(w);
+  });
+}
+function releaseSlot() {
+  aiActive--;
+  const w = aiWaiters.shift();
+  if (w) w.grant();
+}
+
+async function askAI(frase, { acquireMs = 1500, fetchMs = 3500 } = {}) {
   const key = process.env.ANTHROPIC_API_KEY;
   if (!key) return null; // IA não configurada
   const model = process.env.MOD_MODEL || 'claude-haiku-5-5';
@@ -95,9 +121,10 @@ Frase: """${(frase || '').slice(0, 1000)}"""`;
     messages: [{ role: 'user', content: prompt }],
   });
 
-  // Uma tentativa, com teto de tempo curto (padrão 4,5s) para caber no orçamento de
-  // resposta ao participante. Se falhar (timeout, limite de taxa, etc.) devolve {error},
-  // e o "sweeper" do servidor re-modera a frase em segundo plano, fora do caminho do envio.
+  // Espera uma vaga no limitador (no máx. AI_MAX chamadas simultâneas). Se não houver
+  // vaga a tempo, não prende o participante: devolve {error} e o sweeper tenta depois.
+  const gotSlot = await acquireSlot(acquireMs);
+  if (!gotSlot) { console.warn('[moderation] fila de IA cheia'); return { error: true }; }
   try {
     const resp = await fetch('https://api.anthropic.com/v1/messages', {
       method: 'POST',
@@ -107,7 +134,7 @@ Frase: """${(frase || '').slice(0, 1000)}"""`;
         'anthropic-version': '2023-06-01',
       },
       body: payload,
-      signal: AbortSignal.timeout(timeoutMs),
+      signal: AbortSignal.timeout(fetchMs),
     });
     if (!resp.ok) {
       console.warn('[moderation] IA HTTP', resp.status);
@@ -126,12 +153,14 @@ Frase: """${(frase || '').slice(0, 1000)}"""`;
   } catch (e) {
     console.warn('[moderation] IA erro:', e.message);
     return { error: true };
+  } finally {
+    releaseSlot();
   }
 }
 
 // Retorna { status, resultado, motivo }
 // status: 'aprovada' | 'pendente' | 'bloqueada'
-export async function moderate(frase, { moderacaoIA = true, timeoutMs } = {}) {
+export async function moderate(frase, { moderacaoIA = true, acquireMs, fetchMs } = {}) {
   // Camada 1 e 2 (instantâneas)
   const hit = listHit(frase);
   if (hit && hit.acao === 'bloquear') {
@@ -146,7 +175,10 @@ export async function moderate(frase, { moderacaoIA = true, timeoutMs } = {}) {
 
   // Camada 3 (IA)
   if (moderacaoIA) {
-    const ai = await askAI(frase, timeoutMs ? { timeoutMs } : {});
+    const aiOpts = {};
+    if (acquireMs !== undefined) aiOpts.acquireMs = acquireMs;
+    if (fetchMs !== undefined) aiOpts.fetchMs = fetchMs;
+    const ai = await askAI(frase, aiOpts);
     if (ai && !ai.error) {
       if (ai.decisao === 'bloquear') {
         return { status: 'bloqueada', resultado: 'Agente: bloqueada (' + ai.tipo + ')', motivo: ai.motivo || 'Conteúdo não permitido no telão.' };
