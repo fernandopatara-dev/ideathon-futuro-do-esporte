@@ -66,10 +66,15 @@ function listHit(text) {
   return null;
 }
 
+const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+// Status HTTP transitórios (limite de taxa / sobrecarga) que valem uma segunda tentativa.
+// Eles respondem rápido, então re-tentar não aumenta a espera do participante.
+const TRANSIENT = new Set([429, 500, 502, 503, 529]);
+
 async function askAI(frase) {
   const key = process.env.ANTHROPIC_API_KEY;
   if (!key) return null; // IA não configurada
-  const model = process.env.MOD_MODEL || 'claude-3-5-haiku-latest';
+  const model = process.env.MOD_MODEL || 'claude-haiku-5-5';
   const prompt = `Você é o agente de moderação de um ideathon para JOVENS E ADOLESCENTES sobre o futuro do esporte.
 Avalie a frase enviada por um participante (português do Brasil) e decida se pode aparecer num TELÃO PÚBLICO, com plateia e imprensa.
 
@@ -89,39 +94,50 @@ Responda SOMENTE com JSON válido:
 
 Frase: """${(frase || '').slice(0, 1000)}"""`;
 
-  try {
-    const resp = await fetch('https://api.anthropic.com/v1/messages', {
-      method: 'POST',
-      headers: {
-        'content-type': 'application/json',
-        'x-api-key': key,
-        'anthropic-version': '2023-06-01',
-      },
-      body: JSON.stringify({
-        model,
-        max_tokens: 200,
-        messages: [{ role: 'user', content: prompt }],
-      }),
-      signal: AbortSignal.timeout(15000),
-    });
-    if (!resp.ok) {
-      console.warn('[moderation] IA HTTP', resp.status);
+  const payload = JSON.stringify({
+    model,
+    max_tokens: 200,
+    messages: [{ role: 'user', content: prompt }],
+  });
+
+  // Até 2 tentativas. Re-tenta só em erro transitório (limite de taxa/sobrecarga),
+  // que responde rápido; em timeout/rede não re-tenta para não dobrar a espera.
+  for (let attempt = 1; attempt <= 2; attempt++) {
+    try {
+      const resp = await fetch('https://api.anthropic.com/v1/messages', {
+        method: 'POST',
+        headers: {
+          'content-type': 'application/json',
+          'x-api-key': key,
+          'anthropic-version': '2023-06-01',
+        },
+        body: payload,
+        signal: AbortSignal.timeout(10000),
+      });
+      if (!resp.ok) {
+        if (attempt === 1 && TRANSIENT.has(resp.status)) {
+          await sleep(350 + Math.floor(Math.random() * 350));
+          continue;
+        }
+        console.warn('[moderation] IA HTTP', resp.status);
+        return { error: true };
+      }
+      const data = await resp.json();
+      const txt = (data.content && data.content[0] && data.content[0].text) || '';
+      const m = txt.match(/\{[\s\S]*\}/);
+      if (!m) return { error: true };
+      const j = JSON.parse(m[0]);
+      return {
+        decisao: ['aprovar', 'revisar', 'bloquear'].includes(j.decisao) ? j.decisao : 'revisar',
+        tipo: j.tipo || 'outro',
+        motivo: (j.motivo || '').slice(0, 240),
+      };
+    } catch (e) {
+      console.warn('[moderation] IA erro:', e.message);
       return { error: true };
     }
-    const data = await resp.json();
-    const txt = (data.content && data.content[0] && data.content[0].text) || '';
-    const m = txt.match(/\{[\s\S]*\}/);
-    if (!m) return { error: true };
-    const j = JSON.parse(m[0]);
-    return {
-      decisao: ['aprovar', 'revisar', 'bloquear'].includes(j.decisao) ? j.decisao : 'revisar',
-      tipo: j.tipo || 'outro',
-      motivo: (j.motivo || '').slice(0, 240),
-    };
-  } catch (e) {
-    console.warn('[moderation] IA erro:', e.message);
-    return { error: true };
   }
+  return { error: true };
 }
 
 // Retorna { status, resultado, motivo }
