@@ -142,7 +142,13 @@ Frase: """${(frase || '').slice(0, 1000)}"""`;
       return { error: true };
     }
     const data = await resp.json();
-    const txt = (data.content && data.content[0] && data.content[0].text) || '';
+    // Junta o texto de TODOS os blocos de conteúdo do tipo "text" (o modelo pode
+    // emitir outro bloco antes do texto). Mais robusto que ler só content[0].
+    const txt = (Array.isArray(data.content) ? data.content : [])
+      .filter((c) => c && (c.type === 'text' || typeof c.text === 'string'))
+      .map((c) => c.text || '')
+      .join('')
+      .trim();
     const raw = txt;
     // Extração robusta por campo: sobrevive a JSON truncado (max_tokens) e a
     // qualquer texto extra que o modelo coloque depois. O que importa é a decisão.
@@ -158,7 +164,11 @@ Frase: """${(frase || '').slice(0, 1000)}"""`;
           }
         }
       } catch (_) { /* ignora */ }
-      console.warn('[moderation] IA sem decisao. Trecho:', raw.slice(0, 160));
+      // Diagnóstico: registra stop_reason, tipos de bloco e um recorte da resposta.
+      const tipos = (Array.isArray(data.content) ? data.content : []).map((c) => c && c.type).join(',');
+      console.warn('[moderation] IA sem decisao. stop=' + (data.stop_reason || '?') +
+        ' blocos=[' + tipos + '] txtLen=' + raw.length +
+        ' dump=' + JSON.stringify(data).slice(0, 300));
       return { error: true };
     }
     const decisao = dMatch[1].toLowerCase();
