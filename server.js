@@ -377,8 +377,8 @@ app.get('/api/health', (req, res) => res.json({ ok: true }));
 // fora do caminho do envio) e as aprova/bloqueia automaticamente — assim frases limpas
 // aparecem no telão em poucos segundos sem ninguém precisar clicar. Decisões humanas
 // (status já mudado) e revisões legítimas da IA (nome/animal) não são tocadas.
-const SWEEP_MS = parseInt(process.env.SWEEP_MS || '3000', 10);
-const SWEEP_BATCH = parseInt(process.env.SWEEP_BATCH || '4', 10);
+const SWEEP_MS = parseInt(process.env.SWEEP_MS || '6000', 10);
+const SWEEP_BATCH = parseInt(process.env.SWEEP_BATCH || '3', 10);
 let sweeping = false;
 async function sweepPendentes() {
   if (sweeping) return;
@@ -391,7 +391,7 @@ async function sweepPendentes() {
       [SWEEP_BATCH]
     )).rows;
     for (const r of rows) {
-      const mod = await moderate(r.frase, { moderacaoIA: true, timeoutMs: 9000 });
+      const mod = await moderate(r.frase, { moderacaoIA: true, acquireMs: 6000, fetchMs: 9000 });
       // Só grava se a IA respondeu desta vez (senão deixa para o próximo ciclo).
       // O guard "status='pendente'" evita sobrescrever uma decisão humana feita no meio.
       if (mod.resultado && !/IA indispon/.test(mod.resultado)) {
