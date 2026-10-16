@@ -370,6 +370,42 @@ app.get('/api/admin/log', requireAdmin, async (req, res) => {
 // health
 app.get('/api/health', (req, res) => res.json({ ok: true }));
 
+// ==================== AUTO-HEAL DA MODERAÇÃO ====================
+// Quando a IA fica indisponível por um instante (ex.: pico de envios simultâneos),
+// a frase cai em "pendente" com o resultado "IA indisponível". Este sweeper roda em
+// segundo plano, re-modera essas frases (uma de cada vez, com teto de tempo maior,
+// fora do caminho do envio) e as aprova/bloqueia automaticamente — assim frases limpas
+// aparecem no telão em poucos segundos sem ninguém precisar clicar. Decisões humanas
+// (status já mudado) e revisões legítimas da IA (nome/animal) não são tocadas.
+const SWEEP_MS = parseInt(process.env.SWEEP_MS || '3000', 10);
+const SWEEP_BATCH = parseInt(process.env.SWEEP_BATCH || '4', 10);
+let sweeping = false;
+async function sweepPendentes() {
+  if (sweeping) return;
+  sweeping = true;
+  try {
+    const ev = (await query('SELECT moderacao_ia FROM event WHERE id=1;')).rows[0];
+    if (!ev || !ev.moderacao_ia) return;
+    const rows = (await query(
+      "SELECT id, frase FROM ideas WHERE status='pendente' AND agente_resultado LIKE 'Agente: IA indispon%' ORDER BY criado_em ASC LIMIT $1;",
+      [SWEEP_BATCH]
+    )).rows;
+    for (const r of rows) {
+      const mod = await moderate(r.frase, { moderacaoIA: true, timeoutMs: 9000 });
+      // Só grava se a IA respondeu desta vez (senão deixa para o próximo ciclo).
+      // O guard "status='pendente'" evita sobrescrever uma decisão humana feita no meio.
+      if (mod.resultado && !/IA indispon/.test(mod.resultado)) {
+        await query(
+          "UPDATE ideas SET status=$1, agente_resultado=$2, agente_motivo=$3 WHERE id=$4 AND status='pendente';",
+          [mod.status, mod.resultado, mod.motivo, r.id]
+        );
+      }
+    }
+  } catch (e) { console.warn('[sweep] erro', e.message); }
+  finally { sweeping = false; }
+}
+setInterval(sweepPendentes, SWEEP_MS);
+
 const PORT = process.env.PORT || 3000;
 initSchema()
   .then(() => app.listen(PORT, () => console.log('[server] no ar em http://localhost:' + PORT)))
