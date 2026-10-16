@@ -222,7 +222,20 @@ app.get('/api/admin/ideas', requireAdmin, async (req, res) => {
 app.post('/api/admin/ideas/:id', requireAdmin, async (req, res) => {
   try {
     const id = parseInt(req.params.id, 10);
-    const { status, selecionada, score } = req.body || {};
+    const { status, selecionada, score, reavaliar } = req.body || {};
+
+    // Reavaliar com o agente: re-roda a moderação na frase já salva.
+    // Útil quando a ideia caiu em "pendente" porque a IA estava indisponível no momento do envio.
+    if (reavaliar) {
+      const row = (await query('SELECT frase FROM ideas WHERE id=$1;', [id])).rows[0];
+      if (!row) return res.status(404).json({ error: 'ideia não encontrada' });
+      const ev = (await query('SELECT moderacao_ia FROM event WHERE id=1;')).rows[0];
+      const mod = await moderate(row.frase, { moderacaoIA: ev.moderacao_ia });
+      await query('UPDATE ideas SET status=$1, agente_resultado=$2, agente_motivo=$3 WHERE id=$4;', [mod.status, mod.resultado, mod.motivo, id]);
+      await logAcao('admin', 'Reavaliou com o agente a ideia #' + String(id).padStart(4, '0') + ' -> ' + mod.status, 'idea:' + id, ipOf(req));
+      return res.json({ ok: true, status: mod.status, resultado: mod.resultado });
+    }
+
     const sets = []; const params = []; const acoes = [];
     if (status && ['aprovada', 'pendente', 'bloqueada'].includes(status)) {
       params.push(status); sets.push(`status=$${params.length}`);
@@ -236,6 +249,16 @@ app.post('/api/admin/ideas/:id', requireAdmin, async (req, res) => {
     await query(`UPDATE ideas SET ${sets.join(', ')} WHERE id=$${params.length};`, params);
     await logAcao('admin', acoes.join(' / ') + ' ideia #' + String(id).padStart(4, '0'), 'idea:' + id, ipOf(req));
     res.json({ ok: true });
+  } catch (e) { console.error(e); res.status(500).json({ error: 'erro' }); }
+});
+
+// Excluir ideia (ex.: registros de teste ou lixo) — definitivo.
+app.delete('/api/admin/ideas/:id', requireAdmin, async (req, res) => {
+  try {
+    const id = parseInt(req.params.id, 10);
+    const r = await query('DELETE FROM ideas WHERE id=$1;', [id]);
+    await logAcao('admin', 'Excluiu ideia #' + String(id).padStart(4, '0'), 'idea:' + id, ipOf(req));
+    res.json({ ok: true, deleted: r.rowCount });
   } catch (e) { console.error(e); res.status(500).json({ error: 'erro' }); }
 });
 
