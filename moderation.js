@@ -67,12 +67,11 @@ function listHit(text) {
 }
 
 // --- Limitador de concorrência das chamadas de IA ---
-// Um pico de envios simultâneos dispararia dezenas de chamadas à Anthropic ao mesmo
-// tempo, que responde com limite de taxa (e tudo cai em "pendente"). Aqui no máximo
-// AI_MAX chamadas rodam de uma vez; as excedentes esperam um pouco por uma vaga e, se
-// não conseguem a tempo, caem em "pendente" para o sweeper re-tentar depois — sem nunca
-// prender o participante esperando.
-const AI_MAX = parseInt(process.env.AI_MAX_CONCURRENCY || '3', 10);
+// Trava de segurança para não abrir uma quantidade absurda de chamadas simultâneas de
+// uma vez. A conta Anthropic (nível Scale) aguarda milhares de requisições/min, então
+// aqui o teto é alto: praticamente todo envio pega vaga na hora e é moderado na hora.
+// As raras exceções caem em "pendente" e o sweeper re-tenta em segundo plano.
+const AI_MAX = parseInt(process.env.AI_MAX_CONCURRENCY || '25', 10);
 let aiActive = 0;
 const aiWaiters = [];
 function acquireSlot(waitMs) {
@@ -92,7 +91,7 @@ function releaseSlot() {
   if (w) w.grant();
 }
 
-async function askAI(frase, { acquireMs = 1500, fetchMs = 3500 } = {}) {
+async function askAI(frase, { acquireMs = 5000, fetchMs = 8000 } = {}) {
   const key = process.env.ANTHROPIC_API_KEY;
   if (!key) return null; // IA não configurada
   const model = process.env.MOD_MODEL || 'claude-haiku-5-5';
