@@ -22,10 +22,10 @@ body{background:linear-gradient(160deg,#1b2657,var(--stage) 55%,#1c2f4a);color:v
 .ticker{grid-column:1/-1;background:rgba(244,177,28,.10);border:1px solid var(--stage-line);border-left:4px solid var(--yellow);padding:9px 14px;border-radius:9px;display:flex;gap:14px;align-items:center;overflow:hidden}
 .ticker .lab{font-family:var(--display);font-size:11px;letter-spacing:.12em;color:var(--yellow);flex:none}
 .ticker .txt{font-family:var(--display);font-size:22px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.ticker .who{font-family:var(--mono);font-size:11px;color:var(--stage-muted);flex:none}
+.ticker .who{font-family:var(--mono);font-size:11px;color:var(--stage-muted);flex:none;margin-left:auto;text-align:right}
 .mapwrap{position:relative;min-height:0}
-.cloud{position:absolute;inset:0;overflow:hidden;display:flex;flex-wrap:wrap;align-content:center;justify-content:center;gap:2px 22px;padding:14px 16px 34px}
-.cloudword{position:static;transform:none;white-space:normal;text-align:center;font-family:var(--display);font-weight:700;line-height:1.05;padding:0;background:none;transition:opacity .5s,font-size .5s cubic-bezier(.22,1,.36,1);display:inline-block}
+.cloud{position:absolute;inset:0;overflow:hidden}
+.cloudword{position:absolute;transform:translate(-50%,-50%);max-width:250px;white-space:normal;text-align:center;font-family:var(--display);font-weight:700;line-height:1.05;padding:0;background:none;transition:left .9s cubic-bezier(.22,1,.36,1),top .9s cubic-bezier(.22,1,.36,1),opacity .5s}
 .cloudword .v{font-size:.5em;font-weight:800;opacity:.6;vertical-align:super;margin-left:4px}
 .cloudword.lead{font-weight:800;text-shadow:0 0 28px currentColor,0 0 10px currentColor}
 .cloudword.hot{text-shadow:0 0 16px currentColor}
@@ -49,7 +49,7 @@ body{background:linear-gradient(160deg,#1b2657,var(--stage) 55%,#1c2f4a);color:v
 .toptxt{margin-top:16px;border-top:1px solid var(--stage-line);padding-top:14px}
 .sr{font-size:13px;line-height:1.25;margin-bottom:8px;display:flex;gap:8px}.sr b{font-family:var(--mono);color:var(--accent);flex:none}
 .empty{color:var(--stage-muted);font-size:14px;margin-top:40px;text-align:center}
-@media (max-width:820px){html,body{overflow-y:auto;overflow-x:hidden;height:auto;-webkit-overflow-scrolling:touch}.stage{grid-template-columns:1fr;grid-template-rows:auto auto auto auto;overflow:visible;height:auto;min-height:100dvh;padding-bottom:28px}.kpi{margin-left:0;gap:18px}.mapwrap{min-height:52vh}.cloud{position:static;inset:auto;height:auto;overflow:visible;padding:18px 10px}.maplegend{position:static;margin-top:14px}}
+@media (max-width:820px){html,body{overflow-y:auto;overflow-x:hidden;height:auto;-webkit-overflow-scrolling:touch}.stage{grid-template-columns:1fr;grid-template-rows:auto auto auto auto;overflow:visible;height:auto;min-height:100dvh;padding-bottom:28px}.kpi{margin-left:0;gap:18px}.mapwrap{min-height:52vh}.cloud{position:static;inset:auto;height:auto;overflow:visible;display:flex;flex-direction:column;align-items:center;gap:1px;padding:16px 10px}.cloudword{position:static!important;transform:none!important;left:auto!important;top:auto!important;max-width:90%}.maplegend{position:static;margin-top:14px}}
 .brandlogo{height:46px;width:auto;flex:none;margin-right:4px}
 </style>
 </head>
@@ -79,41 +79,57 @@ body{background:linear-gradient(160deg,#1b2657,var(--stage) 55%,#1c2f4a);color:v
 const $=(id)=>document.getElementById(id);
 const cloud=$('cloud'); let coloring={}; let legendDone=false;
 let bubbles={}; // id -> {el, votos}
-// Frases soltas em fluxo centrado: as mais votadas ficam maiores e mais vivas
-// (brilho + opacidade cheia); as menos votadas, menores e mais discretas.
-// Sem caixas, com quebra de linha natural — fica ótimo também no celular.
+// Paleta dos AROS OLÍMPICOS adaptada ao fundo escuro (o anel preto, invisível no
+// fundo, vira azul-celeste; as 2 teses extras recebem tons harmônicos).
+const OLY={fas:'#2E9BE0',midia:'#2FBF57',perf:'#FCB131',prod:'#F0485F',gestao:'#28C4E6',sust:'#17B6A0',arenas:'#9B6CF0'};
+// As mais votadas ficam grandes e vivas no CENTRO; as menos votadas, menores e
+// mais discretas, espalhadas para as LATERAIS. No telão (desktop) é um
+// espalhamento 2D; no celular vira uma coluna que rola (sem caixas, sem corte).
 function renderCloud(sol){
-  const W=cloud.clientWidth; if(!W)return;
+  const W=cloud.clientWidth,H=cloud.clientHeight; if(!W)return;
+  const mobile=window.innerWidth<=820;
   const items=sol.slice(0,14); const n=items.length; const keep=new Set(items.map(s=>String(s.id)));
   Object.keys(bubbles).forEach(k=>{if(!keep.has(k)){bubbles[k].el.remove();delete bubbles[k];}});
   $('cloudEmpty').style.display=items.length?'none':'block';
   if(!items.length)return;
   const max=items[0].votos,min=items[items.length-1].votos;
-  // Faixa de tamanho adaptada à largura (telão grande x celular estreito).
-  const maxFs=Math.max(26,Math.min(54,Math.round(W/12)));
-  const minFs=Math.max(15,Math.round(maxFs*0.4));
-  items.forEach((s,idx)=>{let b=bubbles[s.id];if(!b){const el=document.createElement('span');el.className='cloudword';el.style.opacity='0';cloud.appendChild(el);b={el,votos:-1};bubbles[s.id]=b;}
+  const maxFs=mobile?Math.max(20,Math.min(40,Math.round(W/9))):Math.max(26,Math.min(54,Math.round(W/12)));
+  const minFs=Math.max(14,Math.round(maxFs*(mobile?0.5:0.4)));
+  items.forEach((s,idx)=>{let b=bubbles[s.id];if(!b){const el=document.createElement('span');el.className='cloudword';el.style.left='50%';el.style.top='50%';el.style.opacity='0';cloud.appendChild(el);b={el,votos:-1};bubbles[s.id]=b;}
     const badge=(idx<10&&s.votos>0)?(' <i class="v">'+s.votos+'×</i>'):'';
     b.el.innerHTML=(''+s.texto).replace(/[<>&]/g,c=>({'<':'&lt;','>':'&gt;','&':'&amp;'}[c]))+badge;
-    b.el.style.color=s.cor;b.el.title=s.texto+' — '+s.votos+' votos';
-    cloud.appendChild(b.el); // reordena no fluxo conforme o ranking de votos
+    b.el.style.color=OLY[s.slug]||s.cor;b.el.title=s.texto+' — '+s.votos+' votos';
     const tv=max>min?(s.votos-min)/(max-min):1, tr=n>1?1-idx/(n-1):1, t=0.5*tv+0.5*tr;
-    const fs=minFs+Math.round(Math.pow(t,1.2)*(maxFs-minFs));
-    b.el.style.fontSize=fs+'px';
-    b.el.style.opacity=(1-(n>1?idx/(n-1):0)*0.5).toFixed(2);
+    b.baseFs=minFs+Math.round(Math.pow(t,1.25)*(maxFs-minFs));
+    b.el.dataset.op=(1-(n>1?idx/(n-1):0)*0.5).toFixed(2);
     b.el.classList.toggle('lead',idx===0);
-    b.el.classList.toggle('hot',idx>0&&idx<3); // top 2-3 também ganham um brilho leve
+    b.el.classList.toggle('hot',idx>0&&idx<3);
     if(b.votos>=0&&s.votos>b.votos){b.el.classList.remove('pump');void b.el.offsetWidth;b.el.classList.add('pump');}
     b.votos=s.votos;});
+  if(mobile){
+    // Coluna: maiores no topo, em ordem de votos; o CSS mobile cuida do empilhamento.
+    items.forEach(s=>{const b=bubbles[s.id];b.el.style.fontSize=b.baseFs+'px';cloud.appendChild(b.el);b.el.style.opacity=b.el.dataset.op;});
+    return;
+  }
+  // Espalhamento 2D com encolhimento: líder no centro, demais em espiral p/ as laterais.
+  const placed=[],cx=W/2,cy=H*0.47;
+  items.forEach(s=>{const b=bubbles[s.id],el=b.el;let fs=b.baseFs,ok=false,x=cx,y=cy,w,h;
+    for(let shrink=0;shrink<6&&!ok;shrink++){
+      el.style.fontSize=fs+'px';w=el.offsetWidth;h=el.offsetHeight;
+      for(let t=0;t<6000;t++){const a=t*0.22,r=t*0.5;x=cx+Math.cos(a)*r*1.4;y=cy+Math.sin(a)*r;
+        if(x-w/2<5||x+w/2>W-5||y-h/2<5||y+h/2>H-22)continue;
+        if(!placed.some(p=>Math.abs(p.x-x)<(p.w+w)/2+7&&Math.abs(p.y-y)<(p.h+h)/2+5)){ok=true;break;}}
+      if(!ok)fs=Math.max(13,Math.round(fs*0.82));}
+    if(ok){placed.push({x,y,w,h});el.style.left=x+'px';el.style.top=y+'px';el.style.opacity=el.dataset.op;}else{el.style.opacity='0';}});
 }
 let prev={part:null,ideias:null,sol:null,frase:null};
 function setKpi(id,val,key){const el=$(id);if(prev[key]!==null&&val>prev[key]){el.classList.remove('flash');void el.offsetWidth;el.classList.add('flash');}el.textContent=val;prev[key]=val;}
 function draw(d){
   if(d.event&&d.event.subtitulo)$('subt').textContent=d.event.subtitulo.replace(/^o futuro do esporte /i,'');
   setKpi('kPart',d.totalPart,'part'); setKpi('kIdeias',d.totalApr,'ideias'); setKpi('kSol',d.totalVotos,'sol');
-  if(!legendDone && d.porTese){$('mapLeg').innerHTML=d.porTese.map(t=>'<span class="lg"><i style="background:'+t.cor+'"></i>'+t.nome+'</span>').join('')+'<span class="hint">quanto mais votos, maior a solução</span>';legendDone=true;}
+  if(!legendDone && d.porTese){$('mapLeg').innerHTML=d.porTese.map(t=>'<span class="lg"><i style="background:'+(OLY[t.slug]||t.cor)+'"></i>'+t.nome+'</span>').join('')+'<span class="hint">quanto mais votos, maior a solução</span>';legendDone=true;}
   const max=Math.max(1,...d.porTese.map(t=>t.n));
-  $('rankRows').innerHTML=d.porTese.map(t=>'<div class="rrow"><div class="nm"><i style="background:'+t.cor+'"></i>'+t.nome+'</div><div class="n">'+t.n+'</div><div class="b"><i style="width:'+(t.n/max*100)+'%;background:'+t.cor+'"></i></div></div>').join('');
+  $('rankRows').innerHTML=d.porTese.map(t=>{const c=OLY[t.slug]||t.cor;return '<div class="rrow"><div class="nm"><i style="background:'+c+'"></i>'+t.nome+'</div><div class="n">'+t.n+'</div><div class="b"><i style="width:'+(t.n/max*100)+'%;background:'+c+'"></i></div></div>';}).join('');
   $('topSols').innerHTML=(d.solucoes.slice(0,5).map(s=>'<div class="sr"><b>'+s.votos+'×</b><span>'+s.texto+'</span></div>').join(''))||'<div class="sr">sem votos ainda</div>';
   if(d.recentes&&d.recentes[0]){const f=d.recentes[0].frase;$('tkTxt').textContent=f;$('tkWho').textContent=d.recentes[0].numero?('INSCRIÇÃO '+d.recentes[0].numero):'';
     if(prev.frase!==null&&f!==prev.frase){const tk=document.querySelector('.ticker');if(tk){tk.classList.remove('newidea');void tk.offsetWidth;tk.classList.add('newidea');}}prev.frase=f;}
