@@ -98,16 +98,22 @@ async function askAI(frase, { acquireMs = 5000, fetchMs = 8000 } = {}) {
   const prompt = `Você é o agente de moderação de um ideathon para JOVENS E ADOLESCENTES sobre o futuro do esporte.
 Avalie a frase enviada por um participante (português do Brasil) e decida se pode aparecer num TELÃO PÚBLICO, com plateia e imprensa.
 
-BLOQUEAR (decisao "bloquear") se houver qualquer: xingamento, palavrão, ofensa, discurso de ódio
+Seja GENEROSO para aprovar. O objetivo é que quase toda ideia enviada apareça no telão
+na hora. Frases curtas, simples, genéricas, vagas, com gíria, abreviação (ex.: "vr", "ia", "app")
+ou erro de digitação devem ser APROVADAS — isso NÃO é motivo para revisar nem bloquear.
+
+BLOQUEAR (decisao "bloquear") APENAS se houver: xingamento, palavrão, ofensa, discurso de ódio
 (racismo, homofobia, transfobia, machismo, xenofobia, capacitismo), conteúdo sexual (explícito ou implícito),
 ameaça ou incitação à violência, ou dados sensíveis de terceiros. Considere também ofensas DISFARÇADAS,
 com trocadilho, ironia ou grafia alterada.
 
-REVISAR (decisao "revisar") se: a frase citar o NOME PRÓPRIO DE UMA PESSOA REAL
-(jogador, colega, professor, político, celebridade, treinador), citar o NOME DE UM ANIMAL,
-citar uma marca/clube de forma pejorativa, ou for ambígua a ponto de merecer olhar humano.
+REVISAR (decisao "revisar") SOMENTE se houver um motivo CONCRETO: a frase citar o NOME PRÓPRIO
+DE UMA PESSOA REAL (jogador, colega, professor, político, celebridade, treinador), citar o NOME
+DE UM ANIMAL, ou citar uma marca/clube de forma pejorativa. Não use "revisar" por a frase ser
+curta, vaga, genérica, mal escrita ou por dúvida — nesses casos, APROVE.
 
-APROVAR (decisao "aprovar") somente se for uma ideia construtiva, adequada, sem nenhum dos itens acima.
+APROVAR (decisao "aprovar") em todos os outros casos: qualquer ideia adequada e sem os itens acima.
+Na dúvida entre aprovar e revisar, APROVE.
 
 IMPORTANTE: responda APENAS com o objeto JSON abaixo. Nada antes, nada depois.
 Comece a resposta com { e termine com }. Não escreva nenhuma explicação fora do JSON.
