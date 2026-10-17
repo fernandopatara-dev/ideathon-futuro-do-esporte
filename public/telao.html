@@ -25,7 +25,7 @@ body{background:linear-gradient(160deg,#1b2657,var(--stage) 55%,#1c2f4a);color:v
 .ticker .who{font-family:var(--mono);font-size:11px;color:var(--stage-muted);flex:none}
 .mapwrap{position:relative;min-height:0}
 .cloud{position:absolute;inset:0;overflow:hidden}
-.cloudword{position:absolute;transform:translate(-50%,-50%);white-space:nowrap;font-family:var(--display);font-weight:600;line-height:1;padding:1px 7px;border-radius:9px;background:rgba(255,255,255,.045);transition:left .9s cubic-bezier(.22,1,.36,1),top .9s cubic-bezier(.22,1,.36,1),opacity .5s,font-size .6s cubic-bezier(.22,1,.36,1);will-change:left,top,font-size}
+.cloudword{position:absolute;transform:translate(-50%,-50%);white-space:normal;max-width:250px;text-align:center;font-family:var(--display);font-weight:600;line-height:1.04;padding:3px 10px;border-radius:12px;background:rgba(255,255,255,.045);transition:left .9s cubic-bezier(.22,1,.36,1),top .9s cubic-bezier(.22,1,.36,1),opacity .5s,font-size .6s cubic-bezier(.22,1,.36,1);will-change:left,top,font-size}
 .cloudword .v{font-size:.5em;font-weight:800;opacity:.72;vertical-align:super;margin-left:5px}
 .cloudword.lead{background:rgba(244,177,28,.16);font-weight:800;box-shadow:0 0 0 2px rgba(244,177,28,.35),0 0 26px rgba(244,177,28,.28)}
 .cloudword.pump{animation:pump .75s cubic-bezier(.22,1,.36,1)}
@@ -77,37 +77,42 @@ body{background:linear-gradient(160deg,#1b2657,var(--stage) 55%,#1c2f4a);color:v
 <script>
 const $=(id)=>document.getElementById(id);
 const cloud=$('cloud'); let coloring={}; let legendDone=false;
-// Tamanho = combinação de votos (peso) e posição no ranking, para que as mais
-// relevantes fiquem SEMPRE bem maiores mesmo quando os votos são parecidos.
+// Tamanho base = combinação de votos (peso) e posição no ranking, para que as
+// mais relevantes fiquem SEMPRE bem maiores mesmo quando os votos são parecidos.
 function sizeFor(votos,idx,min,max,n){
   const tv=max>min?(votos-min)/(max-min):1;            // 0..1 por votos
   const tr=n>1?1-idx/(n-1):1;                            // 1 no topo -> 0 no fim
-  const t=0.55*tv+0.45*tr;                               // mistura
-  return 20+Math.round(Math.pow(t,1.35)*58);            // 20px .. 78px
+  const t=0.5*tv+0.5*tr;                                 // mistura
+  return 17+Math.round(Math.pow(t,1.25)*35);            // 17px .. 52px
 }
-function opacityFor(idx,n){const tr=n>1?idx/(n-1):0;return (1-tr*0.5).toFixed(2);} // 1.0 topo -> 0.5 fim
+function opacityFor(idx,n){const tr=n>1?idx/(n-1):0;return (1-tr*0.45).toFixed(2);} // 1.0 topo -> 0.55 fim
 let bubbles={}; // id -> {el, votos}
 function renderCloud(sol){
   const W=cloud.clientWidth,H=cloud.clientHeight; if(!W||!H)return;
-  const items=sol.slice(0,16); const n=items.length; const keep=new Set(items.map(s=>String(s.id)));
+  const items=sol.slice(0,14); const n=items.length; const keep=new Set(items.map(s=>String(s.id)));
   Object.keys(bubbles).forEach(k=>{if(!keep.has(k)){bubbles[k].el.remove();delete bubbles[k];}});
   $('cloudEmpty').style.display=items.length?'none':'block';
   if(!items.length)return;
   const max=items[0].votos,min=items[items.length-1].votos;
   items.forEach((s,idx)=>{let b=bubbles[s.id];if(!b){const el=document.createElement('span');el.className='cloudword';el.style.left='50%';el.style.top='50%';el.style.opacity='0';cloud.appendChild(el);b={el,votos:-1};bubbles[s.id]=b;}
-    const badge=(idx<8&&s.votos>0)?(' <i class="v">'+s.votos+'×</i>'):'';
+    const badge=(idx<10&&s.votos>0)?(' <i class="v">'+s.votos+'×</i>'):'';
     b.el.innerHTML=(''+s.texto).replace(/[<>&]/g,c=>({'<':'&lt;','>':'&gt;','&':'&amp;'}[c]))+badge;
     b.el.style.color=s.cor;b.el.classList.toggle('lead',idx===0);b.el.title=s.texto+' — '+s.votos+' votos';
-    let fs=sizeFor(s.votos,idx,min,max,n);b.el.style.fontSize=fs+'px';while(b.el.offsetWidth>W-16&&fs>13){fs-=2;b.el.style.fontSize=fs+'px';}
-    b.el.dataset.op=opacityFor(idx,n);
+    b.baseFs=sizeFor(s.votos,idx,min,max,n);b.el.dataset.op=opacityFor(idx,n);b.rank=idx;
     // Cresceu? anima "pump" para o público ver o voto entrar ao vivo.
     if(b.votos>=0&&s.votos>b.votos){b.el.classList.remove('pump');void b.el.offsetWidth;b.el.classList.add('pump');}
     b.votos=s.votos;});
-  const placed=[],cx=W/2,cy=H*0.44;
-  items.forEach(s=>{const el=bubbles[s.id].el,w=el.offsetWidth,h=el.offsetHeight;let x=cx,y=cy,ok=false;
-    for(let t=0;t<2800;t++){const a=t*0.35,r=t*1.7;x=cx+Math.cos(a)*r*1.28;y=cy+Math.sin(a)*r;
-      if(x-w/2<4||x+w/2>W-4||y-h/2<4||y+h/2>H-30)continue;
-      if(!placed.some(p=>Math.abs(p.x-x)<(p.w+w)/2+9&&Math.abs(p.y-y)<(p.h+h)/2+6)){ok=true;break;}}
+  // Posicionamento em espiral com encolhimento: se a frase não couber, diminui
+  // a fonte e tenta de novo, garantindo que as mais relevantes sempre apareçam.
+  const placed=[],cx=W/2,cy=H*0.47;
+  items.forEach(s=>{const b=bubbles[s.id],el=b.el;let fs=b.baseFs,ok=false,x=cx,y=cy,w,h;
+    for(let shrink=0;shrink<6&&!ok;shrink++){
+      el.style.fontSize=fs+'px';w=el.offsetWidth;h=el.offsetHeight;
+      for(let t=0;t<6000;t++){const a=t*0.22,r=t*0.5;x=cx+Math.cos(a)*r*1.4;y=cy+Math.sin(a)*r;
+        if(x-w/2<5||x+w/2>W-5||y-h/2<5||y+h/2>H-22)continue;
+        if(!placed.some(p=>Math.abs(p.x-x)<(p.w+w)/2+7&&Math.abs(p.y-y)<(p.h+h)/2+5)){ok=true;break;}}
+      if(!ok)fs=Math.max(13,Math.round(fs*0.82));
+    }
     if(ok){placed.push({x,y,w,h});el.style.left=x+'px';el.style.top=y+'px';el.style.opacity=el.dataset.op;}else{el.style.opacity='0';}});
 }
 let prev={part:null,ideias:null,sol:null,frase:null};
