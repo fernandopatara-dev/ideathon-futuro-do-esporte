@@ -25,7 +25,7 @@ body{background:linear-gradient(160deg,#1b2657,var(--stage) 55%,#1c2f4a);color:v
 .ticker .who{font-family:var(--mono);font-size:11px;color:var(--stage-muted);flex:none;margin-left:auto;text-align:right}
 .mapwrap{position:relative;min-height:0}
 .cloud{position:absolute;inset:0;overflow:hidden}
-.cloudword{position:absolute;transform:translate(-50%,-50%);max-width:250px;white-space:normal;text-align:center;font-family:var(--display);font-weight:700;line-height:1.05;padding:0;background:none;transition:left .9s cubic-bezier(.22,1,.36,1),top .9s cubic-bezier(.22,1,.36,1),opacity .5s}
+.cloudword{position:absolute;transform:translate(-50%,-50%);max-width:250px;white-space:normal;text-align:center;font-family:var(--display);font-weight:700;line-height:1.05;padding:0;background:none;transition:opacity .4s ease}
 .cloudword .v{font-size:.5em;font-weight:800;opacity:.6;vertical-align:super;margin-left:4px}
 .cloudword.lead{font-weight:800;text-shadow:0 0 28px currentColor,0 0 10px currentColor}
 .cloudword.hot{text-shadow:0 0 16px currentColor}
@@ -88,18 +88,17 @@ const OLY={fas:'#2E9BE0',midia:'#2FBF57',perf:'#FCB131',prod:'#F0485F',gestao:'#
 // Varredura final: mede a caixa REAL ja renderizada e, se duas ainda se
 // tocarem, oculta a de menor prioridade. Garante que nunca haja sobreposicao,
 // independentemente de variacoes de medicao/reflow durante o posicionamento.
-let cloudSweepT=null;
-// Caixa de uma palavra. useRect=false usa a posicao-ALVO (style.left/top +
-// offsetWidth): valida no mesmo instante, sem sofrer com a transicao de 0.9s.
-// useRect=true usa a caixa REAL ja pintada (apos a transicao assentar).
-function cloudBox(b,useRect){
-  if(useRect){const r=b.el.getBoundingClientRect();return{x:r.left+r.width/2,y:r.top+r.height/2,w:r.width,h:r.height};}
+// Varredura de garantia: usa a posicao-ALVO (style.left/top + offsetWidth),
+// que e estavel no mesmo instante (nao ha transicao de posicao). Se duas
+// palavras ainda se tocarem, oculta a de menor prioridade. Assim nunca ha
+// sobreposicao, mesmo com variacoes de medicao no posicionamento.
+function cloudBox(b){
   return{x:parseFloat(b.el.style.left),y:parseFloat(b.el.style.top),w:b.el.offsetWidth,h:b.el.offsetHeight};
 }
-function cloudSweep(order,useRect){let changed=true,guard=0;
+function cloudSweep(order){let changed=true,guard=0;
   while(changed&&guard++<40){changed=false;
     const vis=order.filter(b=>b._vis&&b.el.style.opacity!=='0');
-    const bx=vis.map(b=>({b,box:cloudBox(b,useRect)}));
+    const bx=vis.map(b=>({b,box:cloudBox(b)}));
     for(let i=0;i<bx.length&&!changed;i++)for(let j=i+1;j<bx.length;j++){const A=bx[i].box,B=bx[j].box;
       if(Math.abs(A.x-B.x)<(A.w+B.w)/2+6&&Math.abs(A.y-B.y)<(A.h+B.h)/2+4){
         bx[j].b._vis=false;bx[j].b.el.style.opacity='0';changed=true;break;}}}
@@ -142,8 +141,7 @@ function renderCloud(sol){
       if(!ok)fs=Math.max(14,Math.round(fs*0.86));}
     b._vis=ok;
     if(ok){placed.push({x,y,w,h});el.style.fontSize=fs+'px';el.style.left=x+'px';el.style.top=y+'px';el.style.opacity=el.dataset.op;}else{el.style.opacity='0';}});
-  cloudSweep(order,false); // passo imediato: posicoes-alvo (imune a transicao)
-  clearTimeout(cloudSweepT); cloudSweepT=setTimeout(()=>cloudSweep(order,true),950); // passo final: caixas reais ja assentadas
+  cloudSweep(order); // garante zero sobreposicao nas posicoes-alvo
 }
 let prev={part:null,ideias:null,sol:null,frase:null};
 function setKpi(id,val,key){const el=$(id);if(prev[key]!==null&&val>prev[key]){el.classList.remove('flash');void el.offsetWidth;el.classList.add('flash');}el.textContent=val;prev[key]=val;}
