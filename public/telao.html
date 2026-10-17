@@ -89,13 +89,20 @@ const OLY={fas:'#2E9BE0',midia:'#2FBF57',perf:'#FCB131',prod:'#F0485F',gestao:'#
 // tocarem, oculta a de menor prioridade. Garante que nunca haja sobreposicao,
 // independentemente de variacoes de medicao/reflow durante o posicionamento.
 let cloudSweepT=null;
-function cloudSweep(order){let changed=true,guard=0;
+// Caixa de uma palavra. useRect=false usa a posicao-ALVO (style.left/top +
+// offsetWidth): valida no mesmo instante, sem sofrer com a transicao de 0.9s.
+// useRect=true usa a caixa REAL ja pintada (apos a transicao assentar).
+function cloudBox(b,useRect){
+  if(useRect){const r=b.el.getBoundingClientRect();return{x:r.left+r.width/2,y:r.top+r.height/2,w:r.width,h:r.height};}
+  return{x:parseFloat(b.el.style.left),y:parseFloat(b.el.style.top),w:b.el.offsetWidth,h:b.el.offsetHeight};
+}
+function cloudSweep(order,useRect){let changed=true,guard=0;
   while(changed&&guard++<40){changed=false;
     const vis=order.filter(b=>b._vis&&b.el.style.opacity!=='0');
-    const rs=vis.map(b=>({b,r:b.el.getBoundingClientRect()}));
-    for(let i=0;i<rs.length&&!changed;i++)for(let j=i+1;j<rs.length;j++){const a=rs[i].r,b=rs[j].r;
-      if(Math.min(a.right,b.right)-Math.max(a.left,b.left)>-6&&Math.min(a.bottom,b.bottom)-Math.max(a.top,b.top)>-4){
-        rs[j].b._vis=false;rs[j].b.el.style.opacity='0';changed=true;break;}}}
+    const bx=vis.map(b=>({b,box:cloudBox(b,useRect)}));
+    for(let i=0;i<bx.length&&!changed;i++)for(let j=i+1;j<bx.length;j++){const A=bx[i].box,B=bx[j].box;
+      if(Math.abs(A.x-B.x)<(A.w+B.w)/2+6&&Math.abs(A.y-B.y)<(A.h+B.h)/2+4){
+        bx[j].b._vis=false;bx[j].b.el.style.opacity='0';changed=true;break;}}}
 }
 function renderCloud(sol){
   const W=cloud.clientWidth,H=cloud.clientHeight; if(!W)return;
@@ -135,8 +142,8 @@ function renderCloud(sol){
       if(!ok)fs=Math.max(14,Math.round(fs*0.86));}
     b._vis=ok;
     if(ok){placed.push({x,y,w,h});el.style.fontSize=fs+'px';el.style.left=x+'px';el.style.top=y+'px';el.style.opacity=el.dataset.op;}else{el.style.opacity='0';}});
-  cloudSweep(order); // passo imediato
-  clearTimeout(cloudSweepT); cloudSweepT=setTimeout(()=>cloudSweep(order),950); // passo final apos a transicao
+  cloudSweep(order,false); // passo imediato: posicoes-alvo (imune a transicao)
+  clearTimeout(cloudSweepT); cloudSweepT=setTimeout(()=>cloudSweep(order,true),950); // passo final: caixas reais ja assentadas
 }
 let prev={part:null,ideias:null,sol:null,frase:null};
 function setKpi(id,val,key){const el=$(id);if(prev[key]!==null&&val>prev[key]){el.classList.remove('flash');void el.offsetWidth;el.classList.add('flash');}el.textContent=val;prev[key]=val;}
