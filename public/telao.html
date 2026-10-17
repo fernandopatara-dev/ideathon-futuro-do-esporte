@@ -85,42 +85,58 @@ const OLY={fas:'#2E9BE0',midia:'#2FBF57',perf:'#FCB131',prod:'#F0485F',gestao:'#
 // As mais votadas ficam grandes e vivas no CENTRO; as menos votadas, menores e
 // mais discretas, espalhadas para as LATERAIS. No telão (desktop) é um
 // espalhamento 2D; no celular vira uma coluna que rola (sem caixas, sem corte).
+// Varredura final: mede a caixa REAL ja renderizada e, se duas ainda se
+// tocarem, oculta a de menor prioridade. Garante que nunca haja sobreposicao,
+// independentemente de variacoes de medicao/reflow durante o posicionamento.
+let cloudSweepT=null;
+function cloudSweep(order){let changed=true,guard=0;
+  while(changed&&guard++<40){changed=false;
+    const vis=order.filter(b=>b._vis&&b.el.style.opacity!=='0');
+    const rs=vis.map(b=>({b,r:b.el.getBoundingClientRect()}));
+    for(let i=0;i<rs.length&&!changed;i++)for(let j=i+1;j<rs.length;j++){const a=rs[i].r,b=rs[j].r;
+      if(Math.min(a.right,b.right)-Math.max(a.left,b.left)>-6&&Math.min(a.bottom,b.bottom)-Math.max(a.top,b.top)>-4){
+        rs[j].b._vis=false;rs[j].b.el.style.opacity='0';changed=true;break;}}}
+}
 function renderCloud(sol){
   const W=cloud.clientWidth,H=cloud.clientHeight; if(!W)return;
   const mobile=window.innerWidth<=820;
-  const items=sol.slice(0,14); const n=items.length; const keep=new Set(items.map(s=>String(s.id)));
+  const LIMIT=mobile?14:12;
+  const items=sol.slice(0,LIMIT); const n=items.length; const keep=new Set(items.map(s=>String(s.id)));
   Object.keys(bubbles).forEach(k=>{if(!keep.has(k)){bubbles[k].el.remove();delete bubbles[k];}});
   $('cloudEmpty').style.display=items.length?'none':'block';
   if(!items.length)return;
   const max=items[0].votos,min=items[items.length-1].votos;
-  const maxFs=mobile?Math.max(20,Math.min(40,Math.round(W/9))):Math.max(26,Math.min(54,Math.round(W/12)));
-  const minFs=Math.max(14,Math.round(maxFs*(mobile?0.5:0.4)));
+  const maxFs=mobile?Math.max(20,Math.min(40,Math.round(W/9))):Math.max(26,Math.min(52,Math.round(W/12)));
+  const minFs=Math.max(15,Math.round(maxFs*(mobile?0.5:0.42)));
   items.forEach((s,idx)=>{let b=bubbles[s.id];if(!b){const el=document.createElement('span');el.className='cloudword';el.style.left='50%';el.style.top='50%';el.style.opacity='0';cloud.appendChild(el);b={el,votos:-1};bubbles[s.id]=b;}
     const badge=(idx<10&&s.votos>0)?(' <i class="v">'+s.votos+'×</i>'):'';
     b.el.innerHTML=(''+s.texto).replace(/[<>&]/g,c=>({'<':'&lt;','>':'&gt;','&':'&amp;'}[c]))+badge;
     b.el.style.color=OLY[s.slug]||s.cor;b.el.title=s.texto+' — '+s.votos+' votos';
     const tv=max>min?(s.votos-min)/(max-min):1, tr=n>1?1-idx/(n-1):1, t=0.5*tv+0.5*tr;
     b.baseFs=minFs+Math.round(Math.pow(t,1.25)*(maxFs-minFs));
-    b.el.dataset.op=(1-(n>1?idx/(n-1):0)*0.5).toFixed(2);
+    b.el.dataset.op=(1-(n>1?idx/(n-1):0)*0.45).toFixed(2);
     b.el.classList.toggle('lead',idx===0);
     b.el.classList.toggle('hot',idx>0&&idx<3);
     if(b.votos>=0&&s.votos>b.votos){b.el.classList.remove('pump');void b.el.offsetWidth;b.el.classList.add('pump');}
     b.votos=s.votos;});
   if(mobile){
     // Coluna: maiores no topo, em ordem de votos; o CSS mobile cuida do empilhamento.
-    items.forEach(s=>{const b=bubbles[s.id];b.el.style.fontSize=b.baseFs+'px';cloud.appendChild(b.el);b.el.style.opacity=b.el.dataset.op;});
+    items.forEach(s=>{const b=bubbles[s.id];b._vis=true;b.el.style.fontSize=b.baseFs+'px';cloud.appendChild(b.el);b.el.style.opacity=b.el.dataset.op;});
     return;
   }
   // Espalhamento 2D com encolhimento: líder no centro, demais em espiral p/ as laterais.
-  const placed=[],cx=W/2,cy=H*0.47;
-  items.forEach(s=>{const b=bubbles[s.id],el=b.el;let fs=b.baseFs,ok=false,x=cx,y=cy,w,h;
-    for(let shrink=0;shrink<6&&!ok;shrink++){
+  const placed=[],cx=W/2,cy=H*0.47,order=items.map(s=>bubbles[s.id]);
+  order.forEach(b=>{const el=b.el;let fs=b.baseFs,ok=false,x=cx,y=cy,w,h;
+    for(let shrink=0;shrink<12&&!ok;shrink++){
       el.style.fontSize=fs+'px';w=el.offsetWidth;h=el.offsetHeight;
-      for(let t=0;t<6000;t++){const a=t*0.22,r=t*0.5;x=cx+Math.cos(a)*r*1.4;y=cy+Math.sin(a)*r;
-        if(x-w/2<5||x+w/2>W-5||y-h/2<5||y+h/2>H-22)continue;
-        if(!placed.some(p=>Math.abs(p.x-x)<(p.w+w)/2+7&&Math.abs(p.y-y)<(p.h+h)/2+5)){ok=true;break;}}
-      if(!ok)fs=Math.max(13,Math.round(fs*0.82));}
-    if(ok){placed.push({x,y,w,h});el.style.left=x+'px';el.style.top=y+'px';el.style.opacity=el.dataset.op;}else{el.style.opacity='0';}});
+      for(let t=0;t<9000;t++){const a=t*0.22,r=t*0.5;x=cx+Math.cos(a)*r*1.45;y=cy+Math.sin(a)*r;
+        if(x-w/2<6||x+w/2>W-6||y-h/2<6||y+h/2>H-24)continue;
+        if(!placed.some(p=>Math.abs(p.x-x)<(p.w+w)/2+20&&Math.abs(p.y-y)<(p.h+h)/2+16)){ok=true;break;}}
+      if(!ok)fs=Math.max(14,Math.round(fs*0.86));}
+    b._vis=ok;
+    if(ok){placed.push({x,y,w,h});el.style.fontSize=fs+'px';el.style.left=x+'px';el.style.top=y+'px';el.style.opacity=el.dataset.op;}else{el.style.opacity='0';}});
+  cloudSweep(order); // passo imediato
+  clearTimeout(cloudSweepT); cloudSweepT=setTimeout(()=>cloudSweep(order),950); // passo final apos a transicao
 }
 let prev={part:null,ideias:null,sol:null,frase:null};
 function setKpi(id,val,key){const el=$(id);if(prev[key]!==null&&val>prev[key]){el.classList.remove('flash');void el.offsetWidth;el.classList.add('flash');}el.textContent=val;prev[key]=val;}
