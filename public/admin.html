@@ -21,6 +21,20 @@
 .st div{font-family:var(--mono);font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted)}
 .st b{display:block;font-family:var(--display);font-size:32px;line-height:1.05;font-variant-numeric:tabular-nums}
 .st b.warn{color:var(--warn)}.st b.acc{color:var(--accent)}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:18px;margin-bottom:18px}
+@media(max-width:820px){.grid2{grid-template-columns:1fr}}
+.chart{padding:14px;display:flex;flex-direction:column;gap:10px}
+.crow{display:grid;grid-template-columns:170px 1fr 46px;gap:10px;align-items:center}
+.crow .cl{font-size:13.5px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;display:flex;align-items:center;gap:7px}
+.crow .cl .dot{margin:0;flex:none}
+.ctrack{background:var(--soft);border-radius:5px;height:16px;overflow:hidden}
+.ctrack i{display:block;height:100%;border-radius:5px;background:var(--brand);transition:width .5s ease}
+.crow .cn{font-family:var(--mono);font-size:13px;text-align:right;font-variant-numeric:tabular-nums;font-weight:600}
+.chart.stack .crow{grid-template-columns:1fr 46px;grid-template-areas:"lbl lbl" "bar cnt";gap:4px 10px}
+.chart.stack .cl{grid-area:lbl;white-space:normal}
+.chart.stack .ctrack{grid-area:bar}
+.chart.stack .cn{grid-area:cnt;align-self:center}
+.chart .empty{color:var(--muted);font-size:14px;padding:8px 0}
 .panel{background:var(--surface);border:1px solid var(--line);border-radius:8px;margin-bottom:18px}
 .ph{display:flex;flex-wrap:wrap;gap:8px;align-items:center;padding:12px 14px;border-bottom:1px solid var(--line)}
 .ph h3{font-family:var(--display);font-size:22px;margin-right:10px}
@@ -82,7 +96,8 @@ td.m{font-family:var(--mono);font-size:12px;color:var(--muted);white-space:nowra
     <div class="bar">
       <div class="brand">Ideathon <span class="em">Futuro do Esporte</span><small>PAINEL ADMIN · ARENA HUB</small></div>
       <div class="tabs" role="tablist">
-        <button class="tab" role="tab" aria-selected="true" data-v="ideias">Ideias</button>
+        <button class="tab" role="tab" aria-selected="true" data-v="painel">Painel</button>
+        <button class="tab" role="tab" aria-selected="false" data-v="ideias">Ideias</button>
         <button class="tab" role="tab" aria-selected="false" data-v="teses">Teses e soluções</button>
         <button class="tab" role="tab" aria-selected="false" data-v="config">Configurações</button>
         <button class="tab" role="tab" aria-selected="false" data-v="log">Log de acessos</button>
@@ -90,8 +105,28 @@ td.m{font-family:var(--mono);font-size:12px;color:var(--muted);white-space:nowra
       <button class="sm" id="bLogout">Sair</button>
     </div>
 
+    <!-- PAINEL -->
+    <div class="view on" id="v-painel">
+      <div class="stats" id="pstats"></div>
+      <div class="grid2">
+        <div class="panel">
+          <div class="ph"><h3>Modalidades mais inscritas</h3><span class="sp"></span><span class="note" id="pModN" style="margin:0"></span></div>
+          <div class="chart" id="chModalidades"></div>
+        </div>
+        <div class="panel">
+          <div class="ph"><h3>Teses mais escolhidas</h3><span class="sp"></span></div>
+          <div class="chart" id="chTeses"></div>
+        </div>
+      </div>
+      <div class="panel">
+        <div class="ph"><h3>Soluções mais escolhidas</h3><span class="note" style="margin:0">As 3 soluções que cada participante seleciona.</span><span class="sp"></span><button class="sm" id="pReload" title="Atualizar os números agora">↻ Atualizar</button></div>
+        <div class="chart stack" id="chSolucoes"></div>
+      </div>
+      <p class="note" style="margin:0 2px">Os números deste painel consideram inscrições aprovadas e aguardando revisão (as bloqueadas ficam de fora). Atualiza sozinho a cada 10s.</p>
+    </div>
+
     <!-- IDEIAS -->
-    <div class="view on" id="v-ideias">
+    <div class="view" id="v-ideias">
       <div class="stats" id="stats"></div>
       <div class="panel">
         <div class="ph">
@@ -178,9 +213,10 @@ document.querySelectorAll('.tab').forEach(t=>t.addEventListener('click',()=>{
   document.querySelectorAll('.tab').forEach(x=>x.setAttribute('aria-selected',x===t));
   document.querySelectorAll('.view').forEach(v=>v.classList.toggle('on',v.id==='v-'+t.dataset.v));
   if(t.dataset.v==='config')renderQR();
+  if(t.dataset.v==='painel')loadPainel();
 }));
 
-async function loadAll(){loadConfigFilters();await loadTeses();loadIdeas();loadOverview();loadEventCfg();loadLog();}
+async function loadAll(){loadConfigFilters();await loadTeses();loadPainel();loadIdeas();loadOverview();loadEventCfg();loadLog();}
 setInterval(()=>{if($('app').style.display!=='none'&&$('v-ideias').classList.contains('on')){loadIdeas();loadOverview();}},6000);
 
 // ---------- overview ----------
@@ -189,6 +225,35 @@ async function loadOverview(){const r=await fetch('/api/admin/overview');if(!r.o
     .map(s=>'<div class="st"><div>'+s[0]+'</div><b class="'+s[2]+'">'+s[1]+'</b></div>').join('');
   $('iaNote').textContent=d.iaConfigurada?'IA configurada (chave ANTHROPIC_API_KEY presente).':'Sem chave de IA: a moderação usa só a lista de termos. Configure ANTHROPIC_API_KEY para ligar o agente de IA.';
 }
+
+// ---------- painel (dashboard) ----------
+function tally(arr){const o={};arr.forEach(x=>{o[x]=(o[x]||0)+1;});return o;}
+function topN(obj,n){return Object.entries(obj).sort((a,b)=>b[1]-a[1]).slice(0,n);}
+function bars(el,data){
+  if(!data.length){el.innerHTML='<div class="empty">Sem dados ainda.</div>';return;}
+  const max=Math.max(1,...data.map(d=>d.value));
+  el.innerHTML=data.map(d=>{const w=Math.max(2,Math.round(d.value/max*100));const col=d.color||'var(--brand)';
+    const dot=d.color?'<span class="dot" style="background:'+d.color+'"></span>':'';
+    return '<div class="crow"><div class="cl" title="'+esc(d.label)+'">'+dot+esc(d.label)+'</div><div class="ctrack"><i style="width:'+w+'%;background:'+col+'"></i></div><div class="cn">'+d.value+'</div></div>';}).join('');
+}
+async function loadPainel(){
+  try{const ov=await fetch('/api/admin/overview');if(ov.ok){const d=await ov.json();
+    $('pstats').innerHTML=[['Participantes',d.stats.total,''],['Aprovadas',d.stats.aprovadas,''],['Aguardando revisão',d.stats.pendentes,'warn'],['Bloqueadas',d.stats.bloqueadas,''],['Selecionadas',d.stats.selecionadas,'acc']]
+      .map(s=>'<div class="st"><div>'+s[0]+'</div><b class="'+s[2]+'">'+s[1]+'</b></div>').join('');}
+  }catch(e){}
+  try{const r=await fetch('/api/admin/ideas');if(!r.ok)return;const d=await r.json();
+    const base=(d.ideas||[]).filter(i=>i.status!=='bloqueada');
+    const mod=tally(base.map(i=>(i.modalidade||'—').trim()||'—'));
+    bars($('chModalidades'),topN(mod,12).map(([k,v])=>({label:k,value:v})));
+    $('pModN').textContent=Object.keys(mod).length+' modalidades';
+    const tc={};base.forEach(i=>{if(i.tese_slug)tc[i.tese_slug]=(tc[i.tese_slug]||0)+1;});
+    bars($('chTeses'),topN(tc,20).map(([k,v])=>({label:teseNome(k),value:v,color:teseColor(k)})));
+    const sol={};base.forEach(i=>(i.picks_textos||[]).forEach(t=>{if(t)sol[t]=(sol[t]||0)+1;}));
+    bars($('chSolucoes'),topN(sol,15).map(([k,v])=>({label:k,value:v})));
+  }catch(e){}
+}
+$('pReload').addEventListener('click',loadPainel);
+setInterval(()=>{if($('app').style.display!=='none'&&$('v-painel').classList.contains('on'))loadPainel();},10000);
 
 // ---------- filters ----------
 async function loadConfigFilters(){const r=await fetch('/api/config');const c=await r.json();
