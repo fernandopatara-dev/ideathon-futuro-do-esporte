@@ -51,6 +51,12 @@ function requireAdmin(req, res, next) {
   req.admin = p;
   next();
 }
+// Permite exportação automatizada (backup diário) via token só-leitura, além do login de admin.
+function exportAuth(req, res, next) {
+  const tok = process.env.EXPORT_TOKEN;
+  if (tok && req.query.token === tok) { req.admin = { role: 'admin', via: 'token' }; return next(); }
+  return requireAdmin(req, res, next);
+}
 async function logAcao(usuario, acao, alvo, ip, papel = 'admin') {
   try { await query('INSERT INTO access_log (usuario, papel, acao, alvo, ip) VALUES ($1,$2,$3,$4,$5);', [usuario, papel, acao, alvo, ip]); } catch (e) { /* noop */ }
 }
@@ -342,7 +348,7 @@ app.put('/api/admin/event', requireAdmin, async (req, res) => {
 });
 
 // Exportação CSV
-app.get('/api/admin/export.csv', requireAdmin, async (req, res) => {
+app.get('/api/admin/export.csv', exportAuth, async (req, res) => {
   try {
     const rows = (await query(`
       SELECT i.id, i.criado_em, i.numero, i.modalidade, i.tese_slug, i.status,
