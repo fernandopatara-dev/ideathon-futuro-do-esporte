@@ -165,7 +165,7 @@ app.get('/api/telao', async (req, res) => {
       ORDER BY votos DESC LIMIT 40;`)).rows;
 
     const totalVotos = solucoes.reduce((a, s) => a + s.votos, 0);
-    const recentes = (await query(`SELECT numero, frase, tese_slug FROM ideas WHERE status='aprovada' ORDER BY criado_em DESC LIMIT 8;`)).rows;
+    const recentes = (await query(`SELECT numero, frase, tese_slug FROM ideas WHERE status='aprovada' ORDER BY criado_em DESC LIMIT 150;`)).rows;
 
     res.json({ event: ev, totalPart, totalApr, totalVotos, porTese, solucoes, recentes });
   } catch (e) { console.error(e); res.status(500).json({ error: 'erro' }); }
