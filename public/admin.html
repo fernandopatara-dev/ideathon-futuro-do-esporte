@@ -35,6 +35,13 @@
 .chart.stack .ctrack{grid-area:bar}
 .chart.stack .cn{grid-area:cnt;align-self:center}
 .chart .empty{color:var(--muted);font-size:14px;padding:8px 0}
+.crow.clk{cursor:pointer;border-radius:6px;padding:2px 5px;margin:-2px -5px;transition:background .15s}
+.crow.clk:hover{background:var(--soft)}
+.crow.clk:hover .cl{color:var(--brand)}
+.mbg{position:fixed;inset:0;background:rgba(12,18,34,.5);display:none;align-items:flex-start;justify-content:center;z-index:60;padding:34px 16px;overflow:auto}
+.mbg.on{display:flex}
+.mcard{background:var(--surface);border:1px solid var(--line);max-width:900px;width:100%;border-radius:14px;padding:20px 22px;box-shadow:0 24px 70px rgba(0,0,0,.35)}
+.mcard>.ph h3{margin:0}
 .panel{background:var(--surface);border:1px solid var(--line);border-radius:8px;margin-bottom:18px}
 .ph{display:flex;flex-wrap:wrap;gap:8px;align-items:center;padding:12px 14px;border-bottom:1px solid var(--line)}
 .ph h3{font-family:var(--display);font-size:22px;margin-right:10px}
@@ -122,7 +129,17 @@ td.m{font-family:var(--mono);font-size:12px;color:var(--muted);white-space:nowra
         <div class="ph"><h3>Soluções mais escolhidas</h3><span class="note" style="margin:0">As 3 soluções que cada participante seleciona.</span><span class="sp"></span><button class="sm" id="pReload" title="Atualizar os números agora">↻ Atualizar</button></div>
         <div class="chart stack" id="chSolucoes"></div>
       </div>
-      <p class="note" style="margin:0 2px">Os números deste painel consideram inscrições aprovadas e aguardando revisão (as bloqueadas ficam de fora). Atualiza sozinho a cada 10s.</p>
+      <p class="note" style="margin:0 2px">Os números deste painel consideram inscrições aprovadas e aguardando revisão (as bloqueadas ficam de fora). Atualiza sozinho a cada 10s. Clique numa modalidade para ver o dashboard só dela.</p>
+      <div class="mbg" id="modBg">
+        <div class="mcard">
+          <div class="ph"><h3 id="modTitle">Modalidade</h3><span class="sp"></span><button class="sm" id="modClose">Fechar ✕</button></div>
+          <div class="stats" id="modStats" style="margin-bottom:14px"></div>
+          <div class="grid2">
+            <div class="panel"><div class="ph"><h3>Teses mais escolhidas</h3></div><div class="chart" id="modTeses"></div></div>
+            <div class="panel"><div class="ph"><h3>Soluções mais escolhidas</h3></div><div class="chart stack" id="modSolucoes"></div></div>
+          </div>
+        </div>
+      </div>
     </div>
 
     <!-- IDEIAS -->
@@ -229,12 +246,14 @@ async function loadOverview(){const r=await fetch('/api/admin/overview');if(!r.o
 // ---------- painel (dashboard) ----------
 function tally(arr){const o={};arr.forEach(x=>{o[x]=(o[x]||0)+1;});return o;}
 function topN(obj,n){return Object.entries(obj).sort((a,b)=>b[1]-a[1]).slice(0,n);}
-function bars(el,data){
+function bars(el,data,onClickName){
   if(!data.length){el.innerHTML='<div class="empty">Sem dados ainda.</div>';return;}
   const max=Math.max(1,...data.map(d=>d.value));
   el.innerHTML=data.map(d=>{const w=Math.max(2,Math.round(d.value/max*100));const col=d.color||'var(--brand)';
     const dot=d.color?'<span class="dot" style="background:'+d.color+'"></span>':'';
-    return '<div class="crow"><div class="cl" title="'+esc(d.label)+'">'+dot+esc(d.label)+'</div><div class="ctrack"><i style="width:'+w+'%;background:'+col+'"></i></div><div class="cn">'+d.value+'</div></div>';}).join('');
+    const enc=encodeURIComponent(d.label).replace(/'/g,'%27');
+    const open=onClickName?'<div class="crow clk" title="Ver dashboard de '+esc(d.label)+'" onclick="'+onClickName+'(decodeURIComponent(\''+enc+'\'))">':'<div class="crow">';
+    return open+'<div class="cl" title="'+esc(d.label)+'">'+dot+esc(d.label)+'</div><div class="ctrack"><i style="width:'+w+'%;background:'+col+'"></i></div><div class="cn">'+d.value+'</div></div>';}).join('');
 }
 async function loadPainel(){
   try{const ov=await fetch('/api/admin/overview');if(ov.ok){const d=await ov.json();
@@ -243,9 +262,10 @@ async function loadPainel(){
   }catch(e){}
   try{const r=await fetch('/api/admin/ideas');if(!r.ok)return;const d=await r.json();
     const base=(d.ideas||[]).filter(i=>i.status!=='bloqueada');
+    PAINEL_BASE=base;
     const mod=tally(base.map(i=>(i.modalidade||'—').trim()||'—'));
-    bars($('chModalidades'),topN(mod,12).map(([k,v])=>({label:k,value:v})));
-    $('pModN').textContent=Object.keys(mod).length+' modalidades';
+    bars($('chModalidades'),topN(mod,12).map(([k,v])=>({label:k,value:v})),'openMod');
+    $('pModN').textContent=Object.keys(mod).length+' modalidades · clique p/ abrir';
     const tc={};base.forEach(i=>{if(i.tese_slug)tc[i.tese_slug]=(tc[i.tese_slug]||0)+1;});
     bars($('chTeses'),topN(tc,20).map(([k,v])=>({label:teseNome(k),value:v,color:teseColor(k)})));
     const sol={};base.forEach(i=>(i.picks_textos||[]).forEach(t=>{if(t)sol[t]=(sol[t]||0)+1;}));
@@ -254,6 +274,27 @@ async function loadPainel(){
 }
 $('pReload').addEventListener('click',loadPainel);
 setInterval(()=>{if($('app').style.display!=='none'&&$('v-painel').classList.contains('on'))loadPainel();},10000);
+// ---------- drill-down por modalidade ----------
+var PAINEL_BASE=[];
+function openMod(name){
+  const base=PAINEL_BASE.filter(i=>((i.modalidade||'—').trim()||'—')===name);
+  const n=base.length;
+  $('modTitle').textContent=name+' — '+n+' inscri'+(n===1?'ção':'ções');
+  const apr=base.filter(i=>i.status==='aprovada').length;
+  const pen=base.filter(i=>i.status==='pendente').length;
+  const sel=base.filter(i=>i.selecionada).length;
+  $('modStats').innerHTML=[['Inscrições',n,''],['Aprovadas',apr,''],['Aguardando',pen,'warn'],['Selecionadas',sel,'acc']]
+    .map(s=>'<div class="st"><div>'+s[0]+'</div><b class="'+s[2]+'">'+s[1]+'</b></div>').join('');
+  const tc={};base.forEach(i=>{if(i.tese_slug)tc[i.tese_slug]=(tc[i.tese_slug]||0)+1;});
+  bars($('modTeses'),topN(tc,20).map(([k,v])=>({label:teseNome(k),value:v,color:teseColor(k)})));
+  const sol={};base.forEach(i=>(i.picks_textos||[]).forEach(t=>{if(t)sol[t]=(sol[t]||0)+1;}));
+  bars($('modSolucoes'),topN(sol,15).map(([k,v])=>({label:k,value:v})));
+  $('modBg').classList.add('on');
+}
+function closeMod(){$('modBg').classList.remove('on');}
+$('modClose').addEventListener('click',closeMod);
+$('modBg').addEventListener('click',e=>{if(e.target===$('modBg'))closeMod();});
+document.addEventListener('keydown',e=>{if(e.key==='Escape'&&$('modBg').classList.contains('on'))closeMod();});
 
 // ---------- filters ----------
 async function loadConfigFilters(){const r=await fetch('/api/config');const c=await r.json();
