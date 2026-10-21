@@ -140,7 +140,7 @@ td.m{font-family:var(--mono);font-size:12px;color:var(--muted);white-space:nowra
           <a class="sm" id="csv" href="/api/admin/export.csv">Exportar CSV</a>
         </div>
         <div class="tscroll"><table>
-          <thead><tr><th>Sel.</th><th>#</th><th>Hora</th><th>Nº inscrição</th><th>Modalidade</th><th>Tese</th><th>3 soluções</th><th>Frase</th><th>Nota</th><th>Status</th><th>Agente / ação</th></tr></thead>
+          <thead><tr><th>Sel.</th><th>#</th><th>Data / hora</th><th>Nº inscrição</th><th>Modalidade</th><th>Tese</th><th>3 soluções</th><th>Frase</th><th>Nota</th><th>Status</th><th>Agente / ação</th></tr></thead>
           <tbody id="rows"></tbody>
         </table></div>
       </div>
@@ -268,7 +268,7 @@ async function loadIdeas(){
   const r=await fetch('/api/admin/ideas?'+p.toString());if(!r.ok)return;const d=await r.json();
   $('rows').innerHTML=d.ideas.map(i=>{
     const chips=(i.picks_textos||[]).map(t=>'<span class="chip">'+esc(t)+'</span>').join('');
-    const fmt=new Date(i.criado_em).toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'});
+    const _dt=new Date(i.criado_em);const fmt=_dt.toLocaleDateString('pt-BR',{day:'2-digit',month:'2-digit',year:'2-digit'})+'<br>'+_dt.toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'});
     const notas=[1,2,3,4,5].map(n=>'<button class="tiny'+(i.score===n?' on':'')+'" onclick="setScore('+i.id+','+n+')">'+n+'</button>').join('');
     return '<tr>'+
       '<td><input type="checkbox" '+(i.selecionada?'checked':'')+' onchange="toggleSel('+i.id+',this.checked)"></td>'+
