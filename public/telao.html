@@ -90,17 +90,23 @@ function renderIdeias(){
   $('cloudEmpty').style.display=pool.length?'none':'block';
   if(!pool.length){cloud.className='cloud';cloud.innerHTML='';return;}
   const mobile=window.innerWidth<=820;
-  const per=Math.min(mobile?5:8,pool.length);
+  const per=Math.min(mobile?5:7,pool.length);
   const pages=Math.max(1,Math.ceil(pool.length/per));
   const start=(ideaPage%pages)*per;
   let slice=pool.slice(start,start+per);
   if(slice.length<per&&pool.length>per)slice=slice.concat(pool.slice(0,per-slice.length));
-  const sizes=mobile?[26,20,23,19,22]:[48,34,42,30,40,32,44,28];
   cloud.className='cloud flow';
   cloud.innerHTML=slice.map((it,i)=>{
     const col=OLY[it.tese_slug]||'#9fd0ff';
+    let txt=(''+it.frase).trim();
+    if(txt.length>90)txt=txt.slice(0,88).replace(/\s+\S*$/,'')+'…';
+    const L=txt.length;
+    // Tamanho proporcional à TELA (vmin, não px) e MENOR p/ frases longas: cabe em qualquer TV.
+    let sz=(mobile?6.4:8.2)-L*(mobile?0.11:0.12);
+    sz+=(i%2?-0.25:0.3);
+    sz=Math.max(mobile?2.2:2.6,Math.min(mobile?4.2:5.0,sz));
     const num=it.numero?('<i class="n">#'+escTxt(it.numero)+'</i>'):'';
-    return '<span class="ideaword" style="color:'+col+';font-size:'+sizes[i%sizes.length]+'px">'+escTxt(it.frase)+num+'</span>';
+    return '<span class="ideaword" style="color:'+col+';font-size:'+sz.toFixed(2)+'vmin">'+escTxt(txt)+num+'</span>';
   }).join('');
 }
 function rotateIdeias(){if(IDEIAS.length<1)return;ideaPage++;cloud.style.opacity='0';setTimeout(()=>{renderIdeias();cloud.style.opacity='1';},350);}
